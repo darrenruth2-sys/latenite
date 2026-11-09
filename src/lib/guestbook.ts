@@ -1,0 +1,1 @@
+export const GB_SELECT = 'id, profile_id, author_id, parent_id, body, sticker, image_url, hidden_at, created_at, author:profiles!guestbook_entries_author_id_fkey(id, username, display_name, avatar_url), guestbook_reactions(count)';

@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0a0a18;
+  --color-panel: #13132a;
+  --color-panel2: #1b1b3a;
+  --color-line: #2a2a55;
+  --color-fg: #edebff;
+  --color-muted: #c9c6ee;
+  --color-dim: #a6a3c9;
+  --color-pink: #ff4fa3;
+  --color-cyan: #38e1ff;
+  --color-violet: #9b7bff;
+  --color-lime: #5cff8a;
+  --color-amber: #ffc23d;
+  --color-paper: #f6f5ff;
+  --color-plum: #1a0f2e;
+
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-pixel: "VT323", ui-monospace, monospace;
+  --font-serif: "Fraunces Variable", ui-serif, Georgia, serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+
+  --animate-pulse-online: pulse-online 1.8s infinite;
+  --animate-blink: blink 1s steps(1) infinite;
+  --animate-shake: shake 0.6s ease-in-out;
+  --animate-rise: rise 0.35s ease-out;
+  --animate-spin-slow: spin 6s linear infinite;
+
+  @keyframes pulse-online {
+    0% { box-shadow: 0 0 0 0 rgba(92, 255, 138, 0.7); }
+    70% { box-shadow: 0 0 0 8px rgba(92, 255, 138, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(92, 255, 138, 0); }
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  @keyframes rise { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes shake {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-10px, 4px); } 20% { transform: translate(10px, -4px); }
+    30% { transform: translate(-8px, -6px); } 40% { transform: translate(8px, 6px); }
+    50% { transform: translate(-6px, 2px); } 60% { transform: translate(6px, -2px); }
+    70% { transform: translate(-4px, 4px); } 80% { transform: translate(4px, -4px); } 90% { transform: translate(-2px, 0); }
+  }
+}
+
+html { color-scheme: dark; }
+body {
+  background-color: var(--color-ink);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+.bg-dots {
+  background-image: radial-gradient(rgba(155, 123, 255, 0.18) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+::selection { background: var(--color-pink); color: var(--color-ink); }
+:focus-visible { outline: 3px solid var(--color-cyan); outline-offset: 2px; }
+
+@utility btn {
+  @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 border-2 px-4 text-[15px] font-semibold transition-[transform,box-shadow] duration-150 select-none disabled:cursor-not-allowed disabled:opacity-50;
+  &:not(:disabled):hover { transform: translate(-2px, -2px); }
+}
+@utility btn-pink {
+  @apply btn border-fg bg-pink text-ink;
+  &:not(:disabled):hover { box-shadow: 4px 4px 0 var(--color-fg); }
+}
+@utility btn-cyan {
+  @apply btn border-ink bg-cyan text-ink;
+  &:not(:disabled):hover { box-shadow: 4px 4px 0 var(--color-pink); }
+}
+@utility btn-ghost {
+  @apply btn border-line bg-transparent text-fg;
+  &:not(:disabled):hover { box-shadow: 4px 4px 0 var(--color-line); }
+}
+@utility btn-sm { @apply min-h-9 px-3 text-sm; }
+@utility panel { @apply border-2 border-line bg-panel; }
+@utility panel-hard { @apply border-2 border-fg bg-panel; box-shadow: 6px 6px 0 var(--color-pink); }
+@utility field {
+  @apply min-h-11 w-full border-2 border-line bg-ink px-3 py-2 text-fg outline-none transition-colors placeholder:text-dim focus:border-cyan;
+}
+@utility label { @apply font-pixel text-[19px] uppercase leading-none text-dim; }
+@utility pixel { @apply font-pixel leading-none; }
+@utility chip { @apply inline-flex items-center border-2 border-fg px-2 py-0.5 text-[13px] font-semibold; }
+@utility link { @apply text-cyan underline underline-offset-2 hover:decoration-2; }
+@utility sr-only-focusable { &:not(:focus) { @apply sr-only; } }
+
+/* Re-skins the standard feed components with a profile's theme tokens. */
+.themed-feed {
+  --color-panel: var(--card); --color-panel2: color-mix(in srgb, var(--card) 88%, var(--text));
+  --color-fg: var(--text); --color-muted: var(--muted); --color-dim: var(--muted); --color-line: var(--line);
+}
+
+/* Sanitized rich text (blogs) */
+.prose-ah { line-height: 1.75; font-size: 1.075rem; }
+.prose-ah h2 { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; margin: 1.6em 0 0.5em; }
+.prose-ah h3 { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; margin: 1.4em 0 0.4em; }
+.prose-ah p { margin: 0 0 1em; }
+.prose-ah ul { list-style: disc; padding-left: 1.4em; margin: 0 0 1em; }
+.prose-ah ol { list-style: decimal; padding-left: 1.4em; margin: 0 0 1em; }
+.prose-ah blockquote { border-left: 4px solid currentColor; padding-left: 1em; opacity: 0.85; font-style: italic; margin: 0 0 1em; }
+.prose-ah a { text-decoration: underline; }
+.prose-ah img { max-width: 100%; height: auto; margin: 1em 0; border: 2px solid currentColor; }
+.prose-ah hr { border: 0; border-top: 2px dashed currentColor; opacity: 0.4; margin: 2em 0; }
+.prose-ah code { font-family: var(--font-mono); font-size: 0.9em; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
