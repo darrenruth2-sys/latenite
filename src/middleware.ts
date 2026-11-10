@@ -3,7 +3,22 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const PROTECTED = ['/feed', '/friends', '/settings', '/notifications', '/messenger', '/discover', '/blog/new', '/blog/edit', '/bulletins', '/communities/new', '/memories', '/mod', '/themes/mine'];
 
+// Pre-launch: LAUNCH_MODE=soon shows the coming-soon page everywhere, except for people holding the preview key.
+const SOON_OPEN = ['/soon', '/privacy', '/rules', '/preview'];
+
 export async function middleware(request: NextRequest) {
+  const path0 = request.nextUrl.pathname;
+  if (process.env.LAUNCH_MODE === 'soon') {
+    const key = process.env.PREVIEW_KEY;
+    const previewing = !!key && key.length >= 12 && request.cookies.get('ln_preview')?.value === key;
+    const open = SOON_OPEN.some((p) => path0 === p || path0.startsWith(p + '/'));
+    if (!previewing && !open) {
+      if (path0.startsWith('/api/') || path0.startsWith('/auth/')) return new NextResponse('Not open yet', { status: 404 });
+      const url = request.nextUrl.clone(); url.pathname = '/soon'; url.search = '';
+      return NextResponse.rewrite(url);
+    }
+    if (!previewing) return NextResponse.next();
+  }
   let response = NextResponse.next({ request });
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {

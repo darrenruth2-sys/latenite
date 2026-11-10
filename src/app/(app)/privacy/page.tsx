@@ -6,6 +6,7 @@ export default function Privacy() {
     ['Profile visits', 'Visits are recorded once per day per person so the owner can see who stopped by. Turn on private browsing and nothing is recorded — but you won’t see your own visitors either.'],
     ['Music players', 'Profile songs load from Spotify, YouTube, Apple Music or SoundCloud only after you press play. Those services have their own privacy policies.'],
     ['No selling, no ads profiling', 'We don’t sell your data and there’s no algorithm deciding what you see in your friends feed.'],
+    ['Launch list', 'If you signed the guestbook before launch, we keep your email (plus the name and note you gave, if any) only to tell you when LateNite opens. It’s never shown publicly or sold. Email us to be removed.'],
     ['Your controls', 'Download everything or delete your account any time from Settings → Account & data.'],
   ];
   return (

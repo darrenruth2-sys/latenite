@@ -16,7 +16,7 @@ test('security audit: RLS everywhere, no anon writes, safe definer functions, FK
   assert.equal(unsafeDefiner, '', 'security definer without fixed search_path: ' + unsafeDefiner);
   const anonExec = sql(`select string_agg(p.proname, ',' order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')`);
-  assert.equal(anonExec, 'friends_of,get_top_friends,poll_results,username_available,visit_stats', 'anon-callable functions: ' + anonExec);
+  assert.equal(anonExec, 'friends_of,get_top_friends,join_waitlist,poll_results,recent_backers,username_available,visit_stats,waitlist_count', 'anon-callable functions: ' + anonExec);
   const fkNoIndex = sql(`select string_agg(c.conrelid::regclass || '.' || a.attname, ',') from pg_constraint c
     join pg_attribute a on a.attrelid = c.conrelid and a.attnum = c.conkey[1]
     where c.contype = 'f' and c.connamespace = 'public'::regnamespace and array_length(c.conkey, 1) = 1

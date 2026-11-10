@@ -69,7 +69,7 @@ export default async function Home() {
         </section>
         <section className="mx-auto flex max-w-[1200px] flex-col items-center gap-6 px-4 py-24 text-center sm:px-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/latenite-logo.png" alt="LateNite Social" width="420" height="178" className="h-auto w-[320px] sm:w-[420px]" />
+        <img src="/brand/latenite-logo.png" alt="LateNite Social" width="420" height="174" className="h-auto w-[320px] sm:w-[420px]" />
           <h2 className="font-display text-[clamp(40px,6vw,78px)] font-extrabold leading-[0.95] tracking-[-0.04em]">Your page is waiting.<br /><span className="text-cyan">Bring your friends.</span></h2>
           <p className="max-w-[560px] text-lg text-muted">Free to join. Adults 18+. Your feed is your friends, newest first — and that&apos;s the whole trick.</p>
           <Link href="/signup" className="btn-cyan px-8 text-lg">Get your page</Link>
