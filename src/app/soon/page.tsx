@@ -173,6 +173,7 @@ export default async function ComingSoon() {
           <span className="pixel text-lg">© {new Date().getFullYear()} LATENITE SOCIAL</span>
           <span>Founded &amp; developed by Darren Rutherford</span>
           <span className="pixel text-lg">BEST VIEWED AT 1024×768</span>
+          <a href="/terms" className="hover:text-fg">Terms</a>
           <a href="/privacy" className="hover:text-fg">Privacy</a>
           <span className="pixel text-lg">ADULTS 18+</span>
         </div>

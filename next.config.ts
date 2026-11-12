@@ -4,13 +4,13 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321
 const ws = supabase.replace(/^http/, 'ws');
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://www.gofundme.com" + (process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''),
+  "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com" + (process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''),
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: https: ${supabase}`,
   `media-src 'self' blob: ${supabase}`,
   "font-src 'self' data:",
   `connect-src 'self' ${supabase} ${ws}`,
-  'frame-src https://www.gofundme.com https://open.spotify.com https://www.youtube-nocookie.com https://embed.music.apple.com https://w.soundcloud.com',
+  'frame-src https://challenges.cloudflare.com https://www.gofundme.com https://open.spotify.com https://www.youtube-nocookie.com https://embed.music.apple.com https://w.soundcloud.com',
   "frame-ancestors 'none'", "base-uri 'self'", "form-action 'self'", "object-src 'none'",
 ].join('; ');
 

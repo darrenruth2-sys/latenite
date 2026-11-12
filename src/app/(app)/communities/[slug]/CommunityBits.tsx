@@ -51,6 +51,6 @@ export function CommunityComposer({ id, meId }: { id: string; meId: string }) {
 
 export function CommunityPostMenu({ id, canDelete, meId, owner }: { id: string; canDelete: boolean; meId: string | null; owner: string }) {
   const router = useRouter();
-  if (canDelete) return <button type="button" className="self-start text-sm text-dim hover:text-fg" onClick={async () => { if (confirm('Delete this post?')) { await createClient().from('community_posts').delete().eq('id', id); router.refresh(); } }}>Delete</button>;
+  if (canDelete) return <button type="button" className="min-h-10 self-start px-1 text-sm text-dim hover:text-fg" onClick={async () => { if (confirm('Delete this post?')) { await createClient().from('community_posts').delete().eq('id', id); router.refresh(); } }}>Delete</button>;
   return <ReportButton type="community" id={id} owner={owner} meId={meId} className="self-start text-sm text-dim hover:text-fg" />;
 }

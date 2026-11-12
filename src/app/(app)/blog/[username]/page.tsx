@@ -25,7 +25,7 @@ export default async function BlogIndex({ params }: { params: Promise<{ username
         <header className="flex flex-wrap items-end justify-between gap-3 border-b-4 border-[var(--text)] pb-5">
           <div><p className="font-pixel text-xl text-[var(--accent)]">THE BLOG OF</p>
             <h1 className="text-[clamp(36px,6vw,64px)] font-extrabold leading-none" style={{ fontFamily: 'var(--head)' }}>{d?.blog_title || `${p.display_name}'s blog`}</h1>
-            <Link href={`/u/${p.username}`} className="mt-1 inline-block text-sm underline">@{p.username}&apos;s page</Link></div>
+            <Link href={`/u/${p.username}`} className="inline-flex min-h-10 items-center text-sm underline">@{p.username}&apos;s page</Link></div>
           {isMe && <Link href="/blog/new" className="btn border-[var(--text)] bg-[var(--accent)] text-[var(--on-accent)]">Write a post</Link>}
         </header>
         {!posts?.length ? <p className="text-[var(--muted)]">{isMe ? 'No posts yet. Your first one is a click away.' : 'No posts you can read yet.'}</p> : (
@@ -41,7 +41,7 @@ export default async function BlogIndex({ params }: { params: Promise<{ username
                   <h2 className="font-serif text-3xl font-extrabold leading-tight">
                     <Link href={b.status === 'published' ? `/blog/${p.username}/${b.slug}` : `/blog/edit/${b.id}`} className="hover:underline">{b.title}</Link></h2>
                   {b.excerpt && <p className="leading-relaxed text-[var(--muted)]">{b.excerpt}</p>}
-                  {isMe && <Link href={`/blog/edit/${b.id}`} className="self-start text-sm underline">Edit</Link>}
+                  {isMe && <Link href={`/blog/edit/${b.id}`} className="inline-flex min-h-10 items-center self-start px-1 text-sm underline">Edit</Link>}
                 </article>
               </li>
             ))}

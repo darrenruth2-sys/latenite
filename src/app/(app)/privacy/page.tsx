@@ -1,4 +1,6 @@
 export const metadata = { title: 'Privacy' };
+const CONTACT = process.env.CONTACT_EMAIL || 'support@latenite.social';
+
 export default function Privacy() {
   const items = [
     ['What we store', 'Your account email, birthday (only to confirm you’re 18+, never shown), what you put on your page, your posts, messages and settings.'],
@@ -8,12 +10,13 @@ export default function Privacy() {
     ['No selling, no ads profiling', 'We don’t sell your data and there’s no algorithm deciding what you see in your friends feed.'],
     ['Launch list', 'If you signed the guestbook before launch, we keep your email (plus the name and note you gave, if any) only to tell you when LateNite opens. It’s never shown publicly or sold. Email us to be removed.'],
     ['Your controls', 'Download everything or delete your account any time from Settings → Account & data.'],
+    ['Who runs it & how to reach us', `LateNite Social is run from Ohio, USA. Questions or requests about your data: ${CONTACT}.`],
   ];
   return (
     <div className="mx-auto flex max-w-[760px] flex-col gap-6 px-4 py-10 sm:px-6">
       <h1 className="font-display text-5xl font-extrabold">Privacy, in plain words</h1>
       {items.map(([t, d]) => <section key={t} className="panel p-5"><h2 className="font-display text-xl font-extrabold">{t}</h2><p className="mt-1 leading-relaxed text-muted">{d}</p></section>)}
-      <p className="text-sm text-dim">This is a plain-language summary for the beta. A full legal policy is needed before public launch.</p>
+      <p className="text-sm text-dim">Plain-language policy for launch. Have a lawyer review it as LateNite grows.</p>
     </div>
   );
 }

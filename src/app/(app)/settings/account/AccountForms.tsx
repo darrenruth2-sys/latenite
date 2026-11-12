@@ -2,6 +2,7 @@
 import { useActionState, useState } from 'react';
 import { changePassword, deleteAccount } from '@/app/actions/account';
 import { FormMessage, Submit } from '@/components/FormBits';
+import { Captcha } from '@/components/Captcha';
 
 export function AccountForms({ email }: { email: string }) {
   const [pw, pwAction] = useActionState(changePassword, undefined);
@@ -15,6 +16,7 @@ export function AccountForms({ email }: { email: string }) {
         <h3 id="pw-h" className="label">Change password</h3>
         <label className="flex flex-col gap-2"><span className="text-sm text-muted">Current password</span><input className="field" type="password" name="current" autoComplete="current-password" required /></label>
         <label className="flex flex-col gap-2"><span className="text-sm text-muted">New password</span><input className="field" type="password" name="password" autoComplete="new-password" minLength={8} required /></label>
+        <Captcha resetKey={pw} />
         <FormMessage error={pw?.error} ok={pw?.ok} />
         <Submit className="btn-cyan self-start" pendingText="Saving…">Change password</Submit>
       </form>
@@ -30,6 +32,7 @@ export function AccountForms({ email }: { email: string }) {
           <form action={delAction} className="flex flex-col gap-3">
             <label className="flex flex-col gap-2"><span className="text-sm">Type your username to confirm</span><input className="field" name="confirm" autoComplete="off" required /></label>
             <label className="flex flex-col gap-2"><span className="text-sm">Your password</span><input className="field" type="password" name="password" autoComplete="current-password" required /></label>
+            <Captcha resetKey={del} />
             <FormMessage error={del?.error} />
             <Submit className="btn self-start border-fg bg-[#FF5A5A] text-ink" pendingText="Deleting…">Permanently delete</Submit>
           </form>

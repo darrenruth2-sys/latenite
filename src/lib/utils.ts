@@ -46,6 +46,7 @@ export function friendlyError(err: unknown): string {
   for (const code of Object.keys(CODES)) if (msg.includes(code)) return CODES[code];
   if (/duplicate key.*username/i.test(msg)) return 'That username was just taken. Try another.';
   if (/Database error saving new user/i.test(msg)) return 'We couldn’t create that account. Check your username and birthday.';
+  if (/captcha/i.test(msg)) return 'Finish the “are you a person” check, then try again.';
   if (/Invalid login credentials/i.test(msg)) return 'Wrong email or password.';
   if (/Email not confirmed/i.test(msg)) return 'Check your inbox and confirm your email first.';
   if (/User already registered/i.test(msg)) return 'There’s already an account with that email.';

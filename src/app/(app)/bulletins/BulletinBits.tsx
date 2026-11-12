@@ -23,5 +23,5 @@ export function BulletinComposer({ meId }: { meId: string }) {
 }
 export function DeleteBulletin({ id }: { id: string }) {
   const router = useRouter();
-  return <button type="button" className="self-start text-sm text-dim hover:text-fg" onClick={async () => { await createClient().from('bulletins').delete().eq('id', id); router.refresh(); }}>Delete</button>;
+  return <button type="button" className="min-h-10 self-start px-1 text-sm text-dim hover:text-fg" onClick={async () => { await createClient().from('bulletins').delete().eq('id', id); router.refresh(); }}>Delete</button>;
 }

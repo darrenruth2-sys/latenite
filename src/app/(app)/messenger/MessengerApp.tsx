@@ -59,7 +59,13 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
   const lastTyping = useRef(0);
   const seenIds = useRef(new Set<string>());
   const prevStatus = useRef(new Map(initialBuddies.map((b) => [b.id, b.status])));
+  const activeRef = useRef<string | null>(initialActive);
+  const reqSeq = useRef(0); const appliedSeq = useRef(0);
+  const stickToBottom = useRef(true);
+  const [netFails, setNetFails] = useState(0);
   const conv = convs.find((c) => c.id === active) || null;
+  const convRef = useRef<Conv | null>(conv); convRef.current = conv;
+  activeRef.current = active;
 
   useEffect(() => { setNotifyOn(typeof Notification !== 'undefined' && Notification.permission === 'granted'); }, []);
   useEffect(() => { const c = params.get('c'); if (c && c !== active) setActive(c); }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -78,12 +84,28 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
     if (c.data) setConvs(c.data as Conv[]);
   }, [sb]);
 
+  const markRead = useCallback((convId: string) => {
+    if (document.hidden) return; // read receipts only once you've actually looked
+    sb.rpc('mark_read', { p_conv: convId }).then(() => {}, () => {});
+  }, [sb]);
+
   const fetchMsgs = useCallback(async (convId: string, initial = false) => {
+    const seq = ++reqSeq.current;
     if (initial) setLoadingMsgs(true);
-    const { data, error } = await sb.from('messages').select('id, conversation_id, sender_id, kind, body, media_path, created_at')
-      .eq('conversation_id', convId).order('created_at', { ascending: false }).limit(150);
-    if (initial) setLoadingMsgs(false);
-    if (error || !data) return;
+    let res;
+    try {
+      res = await sb.from('messages').select('id, conversation_id, sender_id, kind, body, media_path, created_at')
+        .eq('conversation_id', convId).order('created_at', { ascending: false }).limit(150)
+        .retry(false).abortSignal(AbortSignal.timeout(8000)); // we poll anyway — fail fast so "reconnecting" shows and nothing hangs
+    } catch { res = { data: null, error: new Error('network') }; }
+    const { data, error } = res;
+    // Ignore answers for a chat you've since left, and answers older than one already shown.
+    if (convId !== activeRef.current) return;
+    setLoadingMsgs(false);
+    if (seq < appliedSeq.current) return;
+    appliedSeq.current = seq;
+    if (error || !data) { setNetFails((n) => n + 1); return; }
+    setNetFails(0);
     const list = (data as Msg[]).reverse();
     const fresh = list.filter((m) => !seenIds.current.has(m.id));
     list.forEach((m) => seenIds.current.add(m.id));
@@ -92,42 +114,58 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
         if (m.sender_id === me.id) continue;
         if (m.kind === 'nudge') { setShake(true); setTimeout(() => setShake(false), 650); beep(); }
         if (document.hidden && notifyOn && m.kind !== 'system') {
-          const who = conv?.members.find((x) => x.id === m.sender_id)?.display_name || 'Someone';
+          const who = convRef.current?.members.find((x) => x.id === m.sender_id)?.display_name || 'Someone';
           try { new Notification(m.kind === 'nudge' ? `${who} nudged you!` : `${who} says:`, { body: m.kind === 'nudge' ? '' : m.body || 'sent something', tag: convId }); } catch { /* blocked */ }
         }
       }
     }
-    setMsgs((cur) => [...list, ...cur.filter((m) => m.pending || m.failed)]);
-    if (fresh.some((m) => m.sender_id !== me.id) || initial) sb.rpc('mark_read', { p_conv: convId }).then(() => {}, () => {});
-  }, [sb, me.id, notifyOn, conv]);
+    setMsgs((cur) => [...list, ...cur.filter((m) => (m.pending || m.failed) && m.conversation_id === convId)]);
+    if (fresh.some((m) => m.sender_id !== me.id) || initial) markRead(convId);
+  }, [sb, me.id, notifyOn, markRead]);
 
   // open a conversation
   useEffect(() => {
     if (!active) return;
-    seenIds.current = new Set(); setMsgs([]); setState([]); setErr('');
+    seenIds.current = new Set(); setMsgs([]); setState([]); setErr(''); stickToBottom.current = true; setNetFails(0);
     fetchMsgs(active, true).then(() => setConvs((cs) => cs.map((c) => (c.id === active ? { ...c, unread: 0 } : c))));
     const url = `/messenger?c=${active}`;
     if (window.location.search !== `?c=${active}`) window.history.replaceState(null, '', url);
   }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // polling (fast while a chat is open and visible), plus realtime when available
+  // Polling: every 2.5s while the chat is on screen, every 10s in a background tab (so desktop alerts still fire),
+  // plus an instant refresh from realtime when it's available and whenever you come back to the tab.
   useEffect(() => {
-    let alive = true;
-    const tick = async () => {
-      if (!alive || document.hidden) return;
-      if (active) {
+    let alive = true; let n = 0; let busy = false;
+    const tick = async (force = false) => {
+      if (!alive || !active || busy) return;
+      n++;
+      if (document.hidden && !force && n % 4 !== 0) return;
+      busy = true;
+      try {
         await fetchMsgs(active);
-        const { data } = await sb.rpc('conversation_state', { p_conv: active });
-        if (alive && data) setState(data);
-      }
+        const { data } = await sb.rpc('conversation_state', { p_conv: active }).abortSignal(AbortSignal.timeout(8000));
+        if (alive && data && activeRef.current === active) setState(data);
+      } catch { /* next tick retries */ } finally { busy = false; }
     };
-    const t1 = setInterval(tick, 2500);
+    const t1 = setInterval(() => tick(), 2500);
     const t2 = setInterval(() => { if (!document.hidden) refreshLists(); }, 12000);
-    const channel = active ? sb.channel(`conv-${active}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${active}` }, () => tick()).subscribe() : null;
-    return () => { alive = false; clearInterval(t1); clearInterval(t2); if (channel) sb.removeChannel(channel); };
-  }, [active, fetchMsgs, refreshLists, sb]);
+    const onVisible = () => { if (!document.hidden && active) { tick(true); markRead(active); refreshLists(); } };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('online', onVisible);
+    const channel = active ? sb.channel(`conv-${active}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${active}` }, () => tick(true)).subscribe() : null;
+    return () => {
+      alive = false; clearInterval(t1); clearInterval(t2);
+      document.removeEventListener('visibilitychange', onVisible); window.removeEventListener('online', onVisible);
+      if (channel) sb.removeChannel(channel);
+    };
+  }, [active, fetchMsgs, refreshLists, markRead, sb]);
 
-  useEffect(() => { listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' }); }, [msgs.length, state.some((s) => s.typing)]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Follow new messages only if you're already at the bottom (or you just sent one) — never yank you while reading history.
+  const lastMsg = msgs[msgs.length - 1];
+  useEffect(() => {
+    const el = listRef.current; if (!el) return;
+    if (stickToBottom.current || (lastMsg && lastMsg.sender_id === me.id && lastMsg.pending)) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [msgs.length, lastMsg?.id, state.some((s) => s.typing)]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(null), 5000); return () => clearTimeout(t); }, [toast]);
   useEffect(() => { if (nudgeWait <= 0) return; const t = setTimeout(() => setNudgeWait((n) => n - 1), 1000); return () => clearTimeout(t); }, [nudgeWait]);
 
@@ -138,16 +176,35 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
     setActive(data as string);
   }
 
+  async function deliver(body: string, convId: string, tempId?: string) {
+    const temp: Msg = { id: tempId || 'tmp-' + randomId(), conversation_id: convId, sender_id: me.id, kind: 'text', body, media_path: null, created_at: new Date().toISOString(), pending: true };
+    setMsgs((m) => (tempId ? m.map((x) => (x.id === tempId ? temp : x)) : [...m, temp])); setErr('');
+    stickToBottom.current = true;
+    let res;
+    try {
+      res = await sb.from('messages').insert({ conversation_id: convId, sender_id: me.id, kind: 'text', body })
+        .select('id, conversation_id, sender_id, kind, body, media_path, created_at').single();
+    } catch { res = { data: null, error: new Error('network') }; }
+    if (res.error || !res.data) {
+      setMsgs((m) => m.map((x) => (x.id === temp.id ? { ...x, failed: true, pending: false } : x)));
+      setErr(res.error?.message === 'network' ? 'Couldn’t reach LateNite. Tap Retry when you’re back online.' : friendlyError(res.error));
+      return;
+    }
+    const saved = res.data as Msg;
+    seenIds.current.add(saved.id);
+    // Swap the placeholder for the real message in place — no blink.
+    setMsgs((m) => (m.some((x) => x.id === saved.id) ? m.filter((x) => x.id !== temp.id) : m.map((x) => (x.id === temp.id ? saved : x))));
+    if (activeRef.current === convId) fetchMsgs(convId);
+    refreshLists();
+  }
   async function send(e?: React.FormEvent) {
     e?.preventDefault();
     const body = draft.trim(); if (!body || !active) return;
-    const temp: Msg = { id: 'tmp-' + randomId(), conversation_id: active, sender_id: me.id, kind: 'text', body, media_path: null, created_at: new Date().toISOString(), pending: true };
-    setMsgs((m) => [...m, temp]); setDraft(''); setErr('');
-    const { error } = await sb.from('messages').insert({ conversation_id: active, sender_id: me.id, kind: 'text', body });
-    if (error) { setMsgs((m) => m.map((x) => (x.id === temp.id ? { ...x, failed: true, pending: false } : x))); setErr(friendlyError(error)); return; }
-    setMsgs((m) => m.filter((x) => x.id !== temp.id));
-    await fetchMsgs(active); refreshLists();
+    setDraft('');
+    await deliver(body, active);
   }
+  function retry(m: Msg) { if (m.body && m.conversation_id) deliver(m.body, m.conversation_id, m.id); }
+  function discard(m: Msg) { setMsgs((list) => list.filter((x) => x.id !== m.id)); setErr(''); }
 
   async function sendMedia(kind: 'image' | 'voice', blob: Blob, ext: string) {
     if (!active) return;
@@ -261,7 +318,7 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
         <div className="flex items-center gap-2">
           <input id="ms-np" maxLength={120} defaultValue={me2.now_playing || ''} onBlur={(e) => e.target.value !== (me2.now_playing || '') && savePresence({ now_playing: e.target.value.trim() || null })}
             placeholder="song — artist" className="min-h-10 flex-1 border-2 border-[#D9D2F5] bg-paper px-2.5 text-sm text-plum" />
-          <label className="flex items-center gap-1.5 text-xs"><input type="checkbox" checked={me2.show_now_playing} onChange={(e) => savePresence({ show_now_playing: e.target.checked })} className="h-4 w-4" />Show</label>
+          <label className="flex min-h-10 items-center gap-1.5 text-xs"><input type="checkbox" checked={me2.show_now_playing} onChange={(e) => savePresence({ show_now_playing: e.target.checked })} className="h-5 w-5 accent-pink" />Show</label>
         </div>
         {me2.status === 'away' && (
           <div className="flex flex-col gap-2 border-2 border-dashed border-[#B8860B] bg-[#FFF6DA] p-2.5">
@@ -312,7 +369,7 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 border-t-2 border-[#D9D2F5] px-3.5 py-2.5 text-[13px]">
         <button type="button" onClick={enableNotifications} disabled={notifyOn} className="min-h-8 font-semibold underline disabled:no-underline disabled:opacity-70">{notifyOn ? 'Desktop alerts on' : 'Turn on desktop alerts'}</button>
-        <Link href="/settings/privacy" className="font-semibold underline">Nudges &amp; receipts</Link>
+        <Link href="/settings/privacy" className="inline-flex min-h-10 items-center font-semibold underline">Nudges &amp; receipts</Link>
       </div>
     </section>
   );
@@ -333,7 +390,7 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
         ) : (
           <>
             <div className="flex items-center gap-2 bg-cyan px-3 py-2 text-ink">
-              <button type="button" onClick={() => setActive(null)} className="min-h-8 px-1 font-bold lg:hidden" aria-label="Back to buddy list">←</button>
+              <button type="button" onClick={() => setActive(null)} className="min-h-11 min-w-11 px-2 text-xl font-bold lg:hidden" aria-label="Back to buddy list">←</button>
               <h2 className="min-w-0 flex-1 truncate font-display text-base font-extrabold">{convName(conv)} — conversation</h2>
               <button type="button" onClick={toggleMute} className="min-h-8 border-2 border-ink bg-paper px-2 text-xs font-bold">{conv.muted ? 'Unmute' : 'Mute'}</button>
               {conv.is_group && <button type="button" onClick={leave} className="min-h-8 border-2 border-ink bg-paper px-2 text-xs font-bold">Leave</button>}
@@ -351,7 +408,9 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
               </div>
             </div>
             {me2.status === 'away' && me2.away_message && <p role="status" className="border-b-2 border-[#E5C76B] bg-[#FFF6DA] px-4 py-2 text-[13px] text-[#6B4A00]">You&apos;re away. People who message you get: <b>&ldquo;{me2.away_message}&rdquo;</b></p>}
-            <div ref={listRef} aria-live="polite" className="flex flex-1 flex-col gap-3.5 overflow-y-auto p-4">
+            {netFails >= 2 && <p role="status" className="border-b-2 border-[#E5C76B] bg-[#FFF6DA] px-4 py-1.5 text-[13px] font-semibold text-[#6B4A00]">Connection lost — reconnecting<span className="animate-blink">…</span></p>}
+            <div ref={listRef} aria-live="polite" onScroll={(e) => { const el = e.currentTarget; stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120; }}
+              className="flex flex-1 flex-col gap-3.5 overflow-y-auto p-4">
               {loadingMsgs && <p className="m-auto text-sm text-[#5A4A80]">Loading…</p>}
               {!loadingMsgs && msgs.length === 0 && <div className="m-auto text-center"><p className="font-pixel text-[26px] text-[#6B2FD6]">no messages yet</p><p className="text-sm text-[#5A4A80]">Say hi. Your first message starts the conversation.</p></div>}
               {msgs.map((m) => {
@@ -362,7 +421,9 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
                 return (
                   <div key={m.id} className={`flex flex-col gap-0.5 ${m.pending ? 'opacity-60' : ''}`}>
                     <p className="text-[13px] font-bold" style={{ color: mine ? '#A1125C' : '#4A1AA8' }}>{nameOf(m.sender_id)} says: <span suppressHydrationWarning className="font-normal text-[#5A4A80]">{shortTime(m.created_at)}</span>
-                      {m.failed && <span className="ml-1.5 font-semibold text-[#B4232A]">· not sent</span>}</p>
+                      {m.failed && <span className="ml-1.5 font-semibold text-[#B4232A]">· not sent
+                        <button type="button" onClick={() => retry(m)} className="ml-2 min-h-8 border-2 border-[#B4232A] bg-white px-2 text-xs font-bold">Retry</button>
+                        <button type="button" onClick={() => discard(m)} className="ml-1 min-h-8 px-1.5 text-xs font-bold underline">Delete</button></span>}</p>
                     {m.body && <p className="whitespace-pre-wrap break-words pl-3.5 text-base leading-normal">{m.body}</p>}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     {m.kind === 'image' && (m.media_path && urls[m.media_path] ? <img src={urls[m.media_path]} alt="Photo" className="ml-3.5 max-h-72 max-w-[80%] self-start border-2 border-plum object-contain" /> : <span className="ml-3.5 text-sm text-[#5A4A80]">loading photo…</span>)}

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { friendlyError } from '@/lib/utils';
+import { captchaFrom } from '@/lib/captcha';
 
 export type FormState = { error?: string; ok?: string; fields?: Record<string, string> } | undefined;
 
@@ -33,7 +34,7 @@ export async function signUp(_: FormState, form: FormData): Promise<FormState> {
   const b = new Date(birthdate + 'T00:00:00');
   if (!birthdate || isNaN(b.getTime()) || b.getFullYear() < 1900) return { error: 'Enter your birthday.', fields };
   if (ageOn(b) < 18) return { error: 'You need to be 18 or older to join LateNite.', fields };
-  if (form.get('agree') !== 'on') return { error: 'Please agree to the community rules.', fields };
+  if (form.get('agree') !== 'on') return { error: 'Please agree to the terms and community rules.', fields };
 
   const supabase = await createClient();
   const { data: available } = await supabase.rpc('username_available', { p_username: username });
@@ -41,7 +42,7 @@ export async function signUp(_: FormState, form: FormData): Promise<FormState> {
 
   const { data, error } = await supabase.auth.signUp({
     email, password,
-    options: { data: { username, display_name: display_name || username, birthdate }, emailRedirectTo: `${await siteUrl()}/auth/callback?next=/feed` },
+    options: { captchaToken: captchaFrom(form), data: { username, display_name: display_name || username, birthdate }, emailRedirectTo: `${await siteUrl()}/auth/callback?next=/feed` },
   });
   if (error) return { error: friendlyError(error), fields };
   if (data.session) redirect('/feed');
@@ -56,7 +57,7 @@ export async function logIn(_: FormState, form: FormData): Promise<FormState> {
   const password = String(form.get('password') || '');
   const next = String(form.get('next') || '/feed');
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken: captchaFrom(form) } });
   if (error) return { error: friendlyError(error), fields: { email } };
   redirect(next.startsWith('/') && !next.startsWith('//') ? next : '/feed');
 }
@@ -71,7 +72,7 @@ export async function requestReset(_: FormState, form: FormData): Promise<FormSt
   const email = String(form.get('email') || '').trim();
   if (!/^\S+@\S+\.\S+$/.test(email)) return { error: 'Enter the email you signed up with.' };
   const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${await siteUrl()}/auth/callback?next=/reset-password` });
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { captchaToken: captchaFrom(form), redirectTo: `${await siteUrl()}/auth/callback?next=/reset-password` });
   if (error && !/rate/i.test(error.message)) return { error: friendlyError(error) };
   // Same answer whether or not the account exists, so emails can't be probed.
   return { ok: 'If that email has an account, a reset link is on its way. Check your inbox.' };
@@ -92,6 +93,6 @@ export async function updatePassword(_: FormState, form: FormData): Promise<Form
 export async function resendConfirmation(_: FormState, form: FormData): Promise<FormState> {
   const email = String(form.get('email') || '').trim();
   const supabase = await createClient();
-  await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${await siteUrl()}/auth/callback?next=/feed` } });
+  await supabase.auth.resend({ type: 'signup', email, options: { captchaToken: captchaFrom(form), emailRedirectTo: `${await siteUrl()}/auth/callback?next=/feed` } });
   return { ok: 'Sent again. Give it a minute.' };
 }

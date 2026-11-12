@@ -3,6 +3,7 @@ import { useActionState } from 'react';
 import Link from 'next/link';
 import { requestReset } from '@/app/actions/auth';
 import { FormMessage, Submit } from '@/components/FormBits';
+import { Captcha } from '@/components/Captcha';
 
 export default function Forgot() {
   const [state, action] = useActionState(requestReset, undefined);
@@ -13,6 +14,7 @@ export default function Forgot() {
       <form action={action} className="flex flex-col gap-4">
         <label className="flex flex-col gap-2"><span className="label">Email</span>
           <input className="field" type="email" name="email" autoComplete="email" required /></label>
+        <Captcha resetKey={state} />
         <FormMessage error={state?.error} ok={state?.ok} />
         <Submit pendingText="Sending…">Send reset link</Submit>
       </form>

@@ -58,7 +58,7 @@ export default async function Discover({ searchParams }: { searchParams: Promise
       )}
       {(comms.data || []).length > 0 && (
         <section aria-labelledby="dc-h" className="flex flex-col gap-3">
-          <div className="flex items-baseline justify-between"><h2 id="dc-h" className="label">Communities</h2><Link href="/communities" className="link text-sm">See all</Link></div>
+          <div className="flex items-center justify-between"><h2 id="dc-h" className="label">Communities</h2><Link href="/communities" className="link inline-flex min-h-10 items-center text-sm">See all</Link></div>
           <ul className="flex flex-wrap gap-2">{(comms.data || []).map((c) => <li key={c.slug}><Link href={`/communities/${c.slug}`} className="chip min-h-10 px-3" style={{ borderColor: c.accent }}>{c.name} · {c.member_count}</Link></li>)}</ul>
         </section>
       )}

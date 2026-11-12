@@ -78,7 +78,7 @@ export default async function Home() {
       <footer className="border-t-2 border-line">
         <div className="mx-auto flex max-w-[1200px] flex-wrap gap-x-7 gap-y-3 px-4 py-7 text-sm text-dim sm:px-6">
           <span className="pixel text-lg">© 2026 LATENITE</span>
-          <Link href="/privacy" className="hover:text-fg">Privacy</Link><Link href="/rules" className="hover:text-fg">Community rules</Link>
+          <Link href="/terms" className="hover:text-fg">Terms</Link><Link href="/privacy" className="hover:text-fg">Privacy</Link><Link href="/rules" className="hover:text-fg">Community rules</Link>
         </div>
       </footer>
     </div>

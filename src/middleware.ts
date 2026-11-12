@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 const PROTECTED = ['/feed', '/friends', '/settings', '/notifications', '/messenger', '/discover', '/blog/new', '/blog/edit', '/bulletins', '/communities/new', '/memories', '/mod', '/themes/mine'];
 
 // Pre-launch: LAUNCH_MODE=soon shows the coming-soon page everywhere, except for people holding the preview key.
-const SOON_OPEN = ['/soon', '/privacy', '/rules', '/preview'];
+const SOON_OPEN = ['/soon', '/privacy', '/rules', '/terms', '/preview'];
 
 export async function middleware(request: NextRequest) {
   const path0 = request.nextUrl.pathname;

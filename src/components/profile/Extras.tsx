@@ -38,7 +38,7 @@ export function GiftShelf({ gifts, ownerId, ownerName, meId, canSend, isOwner }:
           </div>
           <p className="text-sm font-semibold">{GIFTS[pick].name}</p>
           <input className={field} maxLength={140} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Add a note (optional)" aria-label="Gift note" />
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={pub} onChange={(e) => setPub(e.target.checked)} className="h-4 w-4" />Show on their shelf (uncheck to send privately)</label>
+          <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" checked={pub} onChange={(e) => setPub(e.target.checked)} className="h-5 w-5 accent-pink" />Show on their shelf (uncheck to send privately)</label>
           <button type="button" className={`${btn} self-start`} onClick={send} disabled={busy}>{busy ? 'Sending…' : 'Send gift'}</button>
           {err && <p role="alert" className="text-sm font-semibold text-[#FF5A5A]">{err}</p>}
         </div>
@@ -91,7 +91,7 @@ export function PollBox({ poll, results, isOwner, meId }: { poll: Poll | null; r
             );
           })}
           <p suppressHydrationWarning className="text-xs text-[var(--muted)]">{poll.closed_at ? 'Poll closed · ' : ''}{results?.counts ? `${total} vote${total === 1 ? '' : 's'}` : meId ? 'Vote to see results' : 'Log in to vote'} · asked {timeAgo(poll.created_at)}</p>
-          {isOwner && !poll.closed_at && <button type="button" onClick={close} className="self-start text-sm underline">Close poll</button>}
+          {isOwner && !poll.closed_at && <button type="button" onClick={close} className="min-h-10 self-start px-1 text-sm underline">Close poll</button>}
         </div>
       )}
       {isOwner && (
@@ -116,7 +116,7 @@ export function BlogSection({ posts, username, isOwner }: { posts: { id: string;
   return (
     <section aria-labelledby="blog-h" className={box}>
       <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 id="blog-h" className="text-[26px] font-extrabold" style={head}>Blog</h2>
-        <Link href={`/blog/${username}`} className="text-sm underline">{isOwner ? 'My blog' : 'All posts'}</Link></div>
+        <Link href={`/blog/${username}`} className="inline-flex min-h-10 items-center px-1 text-sm underline">{isOwner ? 'My blog' : 'All posts'}</Link></div>
       {posts.length === 0 ? <p className="text-[var(--muted)]">No posts yet. <Link href="/blog/new" className="underline">Write your first</Link>.</p> : (
         <ul className="flex flex-col gap-3">{posts.map((b) => (
           <li key={b.id} className="border-l-4 border-[var(--accent)] pl-3"><Link href={`/blog/${username}/${b.slug}`} className="font-serif text-xl font-extrabold hover:underline">{b.title}</Link>

@@ -3,6 +3,7 @@ import { useActionState, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { signUp } from '@/app/actions/auth';
 import { FormMessage, Submit } from '@/components/FormBits';
+import { Captcha } from '@/components/Captcha';
 import { createClient } from '@/lib/supabase/client';
 
 const RE = /^[a-z0-9._]{3,20}$/;
@@ -59,8 +60,9 @@ export function SignupForm({ initialUsername = '' }: { initialUsername?: string 
         <span className="text-xs text-dim">LateNite is for adults 18+. We never show your birthday.</span></label>
       <label className="flex min-h-11 items-start gap-3 text-sm">
         <input type="checkbox" name="agree" className="mt-0.5 h-5 w-5 accent-pink" required />
-        <span>I&apos;m 18+ and I agree to the <Link href="/rules" className="link">community rules</Link> and <Link href="/privacy" className="link">privacy policy</Link>.</span>
+        <span>I&apos;m 18+ and I agree to the <Link href="/terms" className="link">terms</Link>, <Link href="/rules" className="link">community rules</Link> and <Link href="/privacy" className="link">privacy policy</Link>.</span>
       </label>
+      <Captcha resetKey={state} />
       <FormMessage error={state?.error} />
       <Submit pendingText="Creating your page…">Create my page</Submit>
     </form>

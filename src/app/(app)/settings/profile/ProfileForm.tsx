@@ -55,7 +55,7 @@ export function ProfileForm({ me, details }: { me: Me; details: Details }) {
     <form onSubmit={save} className="flex flex-col gap-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-display text-3xl font-extrabold">Edit profile</h2>
-        <Link href={`/u/${me.username}?edit=1`} className="link text-sm">Theme, music &amp; layout live editor →</Link>
+        <Link href={`/u/${me.username}?edit=1`} className="link inline-flex min-h-10 items-center text-sm">Theme, music &amp; layout live editor →</Link>
       </div>
       <section className="panel flex flex-col gap-4 p-5">
         <div className="flex flex-wrap items-center gap-4">

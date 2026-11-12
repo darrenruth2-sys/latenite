@@ -98,7 +98,7 @@ export function BlogEditor({ initial, meId, username }: { initial: Initial; meId
     <div className="mx-auto flex max-w-[820px] flex-col gap-4 px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="pixel text-xl text-violet">{status === 'published' ? '> EDITING A PUBLISHED POST' : '> NEW BLOG POST · DRAFT'}</p>
-        <a href={`/blog/${username}`} className="link text-sm">My blog</a>
+        <a href={`/blog/${username}`} className="link inline-flex min-h-10 items-center text-sm">My blog</a>
       </div>
       {cover ? (
         <div className="relative h-48 border-2 border-fg" style={{ background: `center/cover url("${cover}")` }}>
@@ -118,7 +118,7 @@ export function BlogEditor({ initial, meId, username }: { initial: Initial; meId
         </select>
         <button type="button" className="btn-ghost" disabled={!!busy} onClick={() => save(false)}>{busy === 'draft' ? 'Saving…' : status === 'published' ? 'Unpublish to draft' : 'Save draft'}</button>
         <button type="button" className="btn-pink" disabled={!!busy} onClick={() => save(true)}>{busy === 'publish' ? 'Publishing…' : status === 'published' ? 'Update post' : 'Publish'}</button>
-        {id && <button type="button" className="ml-auto text-sm text-dim hover:text-fg" onClick={remove}>Delete</button>}
+        {id && <button type="button" className="ml-auto min-h-10 px-2 text-sm text-dim hover:text-fg" onClick={remove}>Delete</button>}
         {msg.ok && <span role="status" className="w-full text-sm text-lime">{msg.ok}</span>}
         {msg.error && <span role="alert" className="w-full text-sm text-[#FF8A8A]">{msg.error}</span>}
       </div>

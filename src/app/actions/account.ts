@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { friendlyError } from '@/lib/utils';
+import { captchaFrom } from '@/lib/captcha';
 import type { FormState } from './auth';
 
 export async function changePassword(_: FormState, form: FormData): Promise<FormState> {
@@ -12,8 +13,8 @@ export async function changePassword(_: FormState, form: FormData): Promise<Form
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.email) return { error: 'Please log in again.' };
-  const check = await supabase.auth.signInWithPassword({ email: user.email, password: current });
-  if (check.error) return { error: 'Your current password is wrong.' };
+  const check = await supabase.auth.signInWithPassword({ email: user.email, password: current, options: { captchaToken: captchaFrom(form) } });
+  if (check.error) return { error: /captcha/i.test(check.error.message) ? friendlyError(check.error) : 'Your current password is wrong.' };
   const { error } = await supabase.auth.updateUser({ password });
   return error ? { error: friendlyError(error) } : { ok: 'Password changed.' };
 }
@@ -24,8 +25,8 @@ export async function deleteAccount(_: FormState, form: FormData): Promise<FormS
   if (!user?.email) return { error: 'Please log in again.' };
   const { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
   if (String(form.get('confirm') || '').trim().toLowerCase() !== String(profile?.username)) return { error: 'Type your username exactly to confirm.' };
-  const check = await supabase.auth.signInWithPassword({ email: user.email, password: String(form.get('password') || '') });
-  if (check.error) return { error: 'Wrong password.' };
+  const check = await supabase.auth.signInWithPassword({ email: user.email, password: String(form.get('password') || ''), options: { captchaToken: captchaFrom(form) } });
+  if (check.error) return { error: /captcha/i.test(check.error.message) ? friendlyError(check.error) : 'Wrong password.' };
   const admin = createAdminClient();
   // Remove uploaded files (best effort), then the account. Everything else cascades in the database.
   try {

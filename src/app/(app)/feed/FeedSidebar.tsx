@@ -38,7 +38,7 @@ export async function FeedSidebar() {
         </section>
       )}
       <section aria-labelledby="bul-h" className="panel flex flex-col gap-2.5 p-4">
-        <div className="flex items-baseline justify-between"><h2 id="bul-h" className="pixel text-[21px] text-cyan">BULLETINS</h2><Link href="/bulletins" className="link text-sm">All / post</Link></div>
+        <div className="flex items-center justify-between"><h2 id="bul-h" className="pixel text-[21px] text-cyan">BULLETINS</h2><Link href="/bulletins" className="link inline-flex min-h-10 items-center text-sm">All / post</Link></div>
         {buls.length === 0 ? <p className="text-sm text-dim">No bulletins from friends.</p> : buls.map((b) => (
           <Link key={b.id} href="/bulletins" className="text-sm leading-snug hover:text-cyan"><b>{b.author?.display_name}</b> — <span className="line-clamp-2 inline">{b.body}</span></Link>
         ))}

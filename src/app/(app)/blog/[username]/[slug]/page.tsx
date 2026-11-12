@@ -34,7 +34,7 @@ export default async function BlogPost({ params }: P) {
           <div className="flex items-center gap-3 text-sm text-[var(--muted)]">
             <Avatar user={p} size={36} border="var(--text)" />
             <span><Link href={`/u/${p.username}`} className="font-semibold text-[var(--text)]">{p.display_name}</Link> · {b.published_at ? new Date(b.published_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Draft'}</span>
-            {me?.id === p.id && <Link href={`/blog/edit/${b.id}`} className="ml-auto underline">Edit</Link>}
+            {me?.id === p.id && <Link href={`/blog/edit/${b.id}`} className="ml-auto inline-flex min-h-10 items-center px-2 underline">Edit</Link>}
           </div>
         </header>
         <div className="prose-ah border-2 border-[var(--text)] bg-[var(--card)] p-6 rounded-[var(--radius)] sm:p-9" dangerouslySetInnerHTML={{ __html: html }} />
