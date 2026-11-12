@@ -57,7 +57,7 @@ export function SignupForm({ initialUsername = '' }: { initialUsername?: string 
         <span className="text-xs text-dim">At least 8 characters.</span></label>
       <label className="flex flex-col gap-2"><span className="label">Birthday</span>
         <input className="field" type="date" name="birthdate" required max={max.toISOString().slice(0, 10)} min="1900-01-01" defaultValue={state?.fields?.birthdate} />
-        <span className="text-xs text-dim">LateNite is for adults 18+. We never show your birthday.</span></label>
+        <span className="text-xs text-dim">SignedOn is for adults 18+. We never show your birthday.</span></label>
       <label className="flex min-h-11 items-start gap-3 text-sm">
         <input type="checkbox" name="agree" className="mt-0.5 h-5 w-5 accent-pink" required />
         <span>I&apos;m 18+ and I agree to the <Link href="/terms" className="link">terms</Link>, <Link href="/rules" className="link">community rules</Link> and <Link href="/privacy" className="link">privacy policy</Link>.</span>

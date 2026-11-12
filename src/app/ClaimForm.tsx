@@ -15,7 +15,7 @@ export function ClaimForm() {
       <label htmlFor="claim" className="pixel text-xl text-dim">CLAIM YOUR NAME BEFORE SOMEONE ELSE DOES</label>
       <div className="flex flex-wrap gap-2.5">
         <div className={`flex min-h-13 flex-[1_1_220px] items-center border-2 bg-panel ${border}`}>
-          <span className="pl-3 pr-1 pixel text-xl text-violet">latenite.social/@</span>
+          <span className="pl-3 pr-1 pixel text-xl text-violet">signedon.social/@</span>
           <input id="claim" value={u} onChange={(e) => setU(e.target.value.replace(/\s/g, '').toLowerCase())} maxLength={20} autoComplete="off" placeholder="yourname"
             className="min-w-0 flex-1 bg-transparent py-3 pr-3 text-lg outline-none" />
         </div>

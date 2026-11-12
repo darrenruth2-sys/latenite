@@ -187,7 +187,7 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
     } catch { res = { data: null, error: new Error('network') }; }
     if (res.error || !res.data) {
       setMsgs((m) => m.map((x) => (x.id === temp.id ? { ...x, failed: true, pending: false } : x)));
-      setErr(res.error?.message === 'network' ? 'Couldn’t reach LateNite. Tap Retry when you’re back online.' : friendlyError(res.error));
+      setErr(res.error?.message === 'network' ? 'Couldn’t reach SignedOn. Tap Retry when you’re back online.' : friendlyError(res.error));
       return;
     }
     const saved = res.data as Msg;
@@ -460,7 +460,7 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
       </section>
       {toast && (
         <div role="status" className="animate-rise fixed bottom-20 right-4 z-40 w-72 border-2 border-plum bg-paper text-plum shadow-[6px_6px_0_var(--color-lime)] md:bottom-6">
-          <div className="flex items-center justify-between bg-lime px-2.5 py-1 text-xs font-bold text-ink">LateNite<button type="button" onClick={() => setToast(null)} aria-label="Dismiss" className="px-2 text-base">×</button></div>
+          <div className="flex items-center justify-between bg-lime px-2.5 py-1 text-xs font-bold text-ink">SignedOn<button type="button" onClick={() => setToast(null)} aria-label="Dismiss" className="px-2 text-base">×</button></div>
           <p className="p-3 text-sm font-semibold">{toast}</p>
         </div>
       )}

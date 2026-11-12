@@ -12,7 +12,7 @@ export function GoFundMeWidget({ url }: { url: string }) {
   const src = new URL(`${url.replace(/\/+$/, '')}/widget/large`);
   src.searchParams.set('utm_source', 'widget');
   src.searchParams.set('utm_medium', 'referral');
-  src.searchParams.set('utm_content', 'latenite.social');
+  src.searchParams.set('utm_content', 'signedon.social');
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
@@ -31,7 +31,7 @@ export function GoFundMeWidget({ url }: { url: string }) {
       <iframe
         ref={ref}
         src={src.toString()}
-        title="LateNite Social fundraiser on GoFundMe"
+        title="SignedOn Social fundraiser on GoFundMe"
         width="100%"
         height={height}
         loading="lazy"

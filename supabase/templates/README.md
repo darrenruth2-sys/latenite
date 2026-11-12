@@ -4,8 +4,8 @@ Supabase → Authentication → Emails → Templates. For each one, paste the su
 
 | Supabase template | Subject | File |
 |---|---|---|
-| Confirm signup | Confirm your LateNite page ✨ | `confirm-signup.html` |
-| Reset password | Reset your LateNite password | `reset-password.html` |
-| Change email address | Confirm your new LateNite email | `change-email.html` |
+| Confirm signup | Confirm your SignedOn page ✨ | `confirm-signup.html` |
+| Reset password | Reset your SignedOn password | `reset-password.html` |
+| Change email address | Confirm your new SignedOn email | `change-email.html` |
 
-The logo loads from `{{ .SiteURL }}/brand/latenite-logo.png`, so set Site URL to https://latenite.social first.
+The logo loads from `{{ .SiteURL }}/brand/signedon-logo.png`, so set Site URL to https://signedon.social first.

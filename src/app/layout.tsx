@@ -7,7 +7,7 @@ import '@fontsource/space-mono';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: { default: 'LateNite — your profile, your music, your friends', template: '%s · LateNite' },
+  title: { default: 'SignedOn — your profile, your music, your friends', template: '%s · SignedOn' },
   description: 'The social network that remembers when the internet was fun. Custom profiles, Top Friends, guestbooks, and a messenger with nudges.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
 };

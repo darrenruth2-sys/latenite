@@ -22,7 +22,7 @@ export function AccountForms({ email }: { email: string }) {
       </form>
       <section className="panel flex flex-col gap-3 p-5" aria-labelledby="exp-h">
         <h3 id="exp-h" className="label">Download your data</h3>
-        <p className="text-sm text-muted">Everything you&apos;ve put on LateNite — profile, posts, comments, guestbook entries, messages you sent, settings — as one JSON file.</p>
+        <p className="text-sm text-muted">Everything you&apos;ve put on SignedOn — profile, posts, comments, guestbook entries, messages you sent, settings — as one JSON file.</p>
         <a href="/api/export" className="btn-ghost self-start" download>Download my data</a>
       </section>
       <section className="flex flex-col gap-3 border-2 border-[#FF5A5A] bg-panel p-5" aria-labelledby="del-h">

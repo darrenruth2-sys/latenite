@@ -1,4 +1,4 @@
-# LateNite Social
+# SignedOn Social
 
 The social network that remembers when the internet was fun: customizable profiles, profile songs, Top Friends,
 guestbooks, an MSN-style messenger with nudges, blogs, bulletins, communities — and a chronological friends feed.
@@ -28,8 +28,8 @@ npm run dev                  # http://localhost:3000
    supabase/migrations/20261109000500_moderation.sql
    ```
 3. **Auth settings** (Dashboard → Authentication):
-   - URL Configuration → Site URL: `https://latenite.social` (or `http://localhost:3000` while testing)
-   - Redirect URLs: add `https://latenite.social/auth/callback` and `http://localhost:3000/auth/callback`
+   - URL Configuration → Site URL: `https://signedon.social` (or `http://localhost:3000` while testing)
+   - Redirect URLs: add `https://signedon.social/auth/callback` and `http://localhost:3000/auth/callback`
    - Providers → Email: keep **Confirm email** ON.
    - Before launch, set up custom SMTP (Resend, Postmark, etc.). Supabase's built-in email is rate-limited and meant for testing.
 4. **Keys** (Dashboard → Project Settings → API) go in `.env.local`:
@@ -37,7 +37,7 @@ npm run dev                  # http://localhost:3000
    NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=...        # anon / publishable key (safe for the browser)
    SUPABASE_SERVICE_ROLE_KEY=...            # SERVER ONLY. Only used for account deletion.
-   NEXT_PUBLIC_SITE_URL=https://latenite.social
+   NEXT_PUBLIC_SITE_URL=https://signedon.social
    ```
 5. **Make yourself a moderator** (SQL editor, after you sign up):
    ```sql
@@ -50,7 +50,7 @@ npm run dev                  # http://localhost:3000
 1. Push this folder to a GitHub repo.
 2. vercel.com → Add New Project → import the repo.
 3. Add the four environment variables above (Production + Preview).
-4. Deploy, then add the domain `latenite.social` in Vercel → Settings → Domains, and point Namecheap's DNS at it
+4. Deploy, then add the domain `signedon.social` in Vercel → Settings → Domains, and point Namecheap's DNS at it
    (Vercel shows the exact records: usually an A record `76.76.21.21` for `@` and a CNAME `cname.vercel-dns.com` for `www`).
 5. Update Supabase Auth Site URL + redirect URLs to the real domain.
 

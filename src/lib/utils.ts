@@ -27,7 +27,7 @@ export function shortTime(iso: string) {
 }
 
 const CODES: Record<string, string> = {
-  AH_UNDERAGE: 'You need to be 18 or older to join LateNite.',
+  AH_UNDERAGE: 'You need to be 18 or older to join SignedOn.',
   AH_INVALID_BIRTHDATE: 'That birthday doesn’t look right.',
   AH_USERNAME_RESERVED: 'That username is reserved. Try another.',
   AH_RATE_LIMIT: 'Whoa, slow down a little. Try again in a bit.',
@@ -52,7 +52,7 @@ export function friendlyError(err: unknown): string {
   if (/User already registered/i.test(msg)) return 'There’s already an account with that email.';
   if (/Password should be/i.test(msg)) return 'Password needs at least 8 characters.';
   if (/rate limit|too many/i.test(msg)) return 'Too many tries. Wait a minute and try again.';
-  if (/fetch failed|network/i.test(msg)) return 'Can’t reach LateNite right now. Check your connection.';
+  if (/fetch failed|network/i.test(msg)) return 'Can’t reach SignedOn right now. Check your connection.';
   return 'Something went wrong. Try again.';
 }
 

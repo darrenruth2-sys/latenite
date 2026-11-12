@@ -33,7 +33,7 @@ export async function signUp(_: FormState, form: FormData): Promise<FormState> {
   if (password.length < 8) return { error: 'Password needs at least 8 characters.', fields };
   const b = new Date(birthdate + 'T00:00:00');
   if (!birthdate || isNaN(b.getTime()) || b.getFullYear() < 1900) return { error: 'Enter your birthday.', fields };
-  if (ageOn(b) < 18) return { error: 'You need to be 18 or older to join LateNite.', fields };
+  if (ageOn(b) < 18) return { error: 'You need to be 18 or older to join SignedOn.', fields };
   if (form.get('agree') !== 'on') return { error: 'Please agree to the terms and community rules.', fields };
 
   const supabase = await createClient();

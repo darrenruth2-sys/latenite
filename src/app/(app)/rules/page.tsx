@@ -1,6 +1,6 @@
 export const metadata = { title: 'Community rules' };
 const RULES = [
-  ['18+ only', 'LateNite is for adults. Accounts that appear to belong to someone under 18 are removed.'],
+  ['18+ only', 'SignedOn is for adults. Accounts that appear to belong to someone under 18 are removed.'],
   ['Be decent', 'No harassment, threats, hate speech, or targeting people for who they are.'],
   ['Real people, real activity', 'No fake accounts, bots, impersonation or bought engagement.'],
   ['Respect privacy', 'Don’t post other people’s private info (addresses, phone numbers, private messages) without consent.'],

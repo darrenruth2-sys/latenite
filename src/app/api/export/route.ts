@@ -26,6 +26,6 @@ export async function GET() {
   const { data: gbOnMine } = await supabase.from('guestbook_entries').select('*').eq('profile_id', user.id).limit(10000);
   if (gbOnMine) out.guestbook_on_my_page = gbOnMine;
   return new NextResponse(JSON.stringify(out, null, 2), {
-    headers: { 'content-type': 'application/json', 'content-disposition': `attachment; filename="latenite-export-${new Date().toISOString().slice(0, 10)}.json"`, 'cache-control': 'no-store' },
+    headers: { 'content-type': 'application/json', 'content-disposition': `attachment; filename="signedon-export-${new Date().toISOString().slice(0, 10)}.json"`, 'cache-control': 'no-store' },
   });
 }
