@@ -175,6 +175,8 @@ export default async function ComingSoon() {
           <span className="pixel text-lg">BEST VIEWED AT 1024×768</span>
           <a href="/terms" className="hover:text-fg">Terms</a>
           <a href="/privacy" className="hover:text-fg">Privacy</a>
+          <a href="/copyright" className="hover:text-fg">Copyright</a>
+          <a href="/report-content" className="hover:text-fg">Report content</a>
           <span className="pixel text-lg">ADULTS 18+</span>
         </div>
       </footer>

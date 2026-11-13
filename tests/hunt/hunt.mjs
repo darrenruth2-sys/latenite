@@ -32,7 +32,7 @@ async function seed() {
   await befriend(A, B); await befriend(A, C); await befriend(B, C);
   await D.c.rpc('send_friend_request', { p_target: A.id }); // pending request for A
   await admin.from('moderators').insert({ user_id: A.id });
-  const pic = 'http://localhost:54321/storage/v1/object/public/media/x/pic.png';
+  const pic = `http://localhost:54321/storage/v1/object/public/media/${A.id}/pic.png`;
   await A.c.from('profile_details').update({ headline: 'hello world', bio: 'I build things.', banner_url: pic,
     theme: { preset: 'midnight', bg_image: pic, bg_size: 'cover' },
     music: { provider: 'youtube', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title: 'Song' }, custom_css: '.so-name{color:#FF4FA3}' }).eq('id', A.id);
@@ -82,7 +82,7 @@ async function checkPage(page, path) {
   const logo = page.locator('a[aria-label="SignedOn home"]').first();
   if (await logo.count()) { const href = await logo.getAttribute('href'); if (href !== '/' && href !== '/feed') bug('logo', where, `logo links to ${href}`); }
   // images that failed (ignore placeholder seed pic)
-  const broken = await page.evaluate(() => [...document.images].filter((i) => i.complete && i.naturalWidth === 0 && !i.src.includes('/x/pic.png') && !/ytimg|scdn|spotify/.test(i.src)).map((i) => i.src)).catch(() => []);
+  const broken = await page.evaluate(() => [...document.images].filter((i) => i.complete && i.naturalWidth === 0 && !i.src.includes('/pic.png') && !/ytimg|scdn|spotify/.test(i.src)).map((i) => i.src)).catch(() => []);
   for (const b of broken) bug('broken-image', where, b);
   // buttons with no accessible name
   const unnamed = await page.evaluate(() => [...document.querySelectorAll('button, a[href]')].filter((e) => e.offsetParent && !(e.textContent.trim() || e.getAttribute('aria-label') || e.getAttribute('title') || e.querySelector('img[alt]:not([alt=""])'))).map((e) => e.outerHTML.slice(0, 120))).catch(() => []);

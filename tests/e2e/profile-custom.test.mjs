@@ -5,7 +5,7 @@ import { launch, close, BASE, newPage } from './browser.mjs';
 import { makeUser, befriend, uname } from '../helpers.mjs';
 
 let A, B, page;
-const PIC = 'http://localhost:54321/storage/v1/object/public/media/x/pic.png';
+const picFor = (id) => `http://localhost:54321/storage/v1/object/public/media/${id}/pic.png`;
 before(async () => {
   await launch();
   [A, B] = await Promise.all([makeUser(uname('css_a')), makeUser(uname('css_b'))]);
@@ -20,8 +20,8 @@ after(close);
 
 test('saved layout settings render for visitors', async () => {
   const r = await A.c.from('profile_details').update({
-    banner_url: PIC,
-    theme: { preset: 'midnight', bg_image: PIC, bg_size: 'tile', bg_x: 10, bg_y: 90, bg_fixed: false, bg_dim: 40, banner_x: 20, banner_y: 80, banner_zoom: 150 },
+    banner_url: picFor(A.id),
+    theme: { preset: 'midnight', bg_image: picFor(A.id), bg_size: 'tile', bg_x: 10, bg_y: 90, bg_fixed: false, bg_dim: 40, banner_x: 20, banner_y: 80, banner_zoom: 150 },
     music: { provider: 'youtube', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title: 'Song' },
     custom_css: `.so-name { color: rgb(0, 255, 0) } body { border-top: 7px solid rgb(255, 0, 0) }
       .so-safe { display: none } .x { position: fixed } div { background-image: url(https://evil.example/t.gif) } @import url(https://evil.example/a.css);`,
@@ -98,7 +98,7 @@ test('log out from the account menu works', async () => {
 
 test('Edit profile page: drag + zoom the cover photo and save just the position', async () => {
   const C = await makeUser(uname('css_c'));
-  await C.c.from('profile_details').update({ banner_url: PIC, theme: { preset: 'forest', accent: '#FF7B00' } }).eq('id', C.id);
+  await C.c.from('profile_details').update({ banner_url: picFor(C.id), theme: { preset: 'forest', accent: '#FF7B00' } }).eq('id', C.id);
   const p3 = await newPage({ viewport: { width: 1280, height: 900 } }); p3.removeAllListeners('console');
   await p3.goto(BASE + '/login');
   await p3.fill('input[name=email]', C.email); await p3.fill('input[name=password]', 'password123');

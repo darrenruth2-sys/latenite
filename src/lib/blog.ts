@@ -5,6 +5,9 @@ import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import sanitizeHtml from 'sanitize-html';
 
+const STORAGE = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '') + '/storage/v1/object/public/media/';
+function isStorageUrl(u: string) { return !!u && u.startsWith(STORAGE) && !u.includes('..') && !/[\s"'<>]/.test(u); }
+
 /** Blog bodies are stored as Tiptap JSON and turned into HTML here, then sanitized again. */
 export function renderBlogHtml(doc: unknown): string {
   let html = '';
@@ -19,6 +22,8 @@ export function renderBlogHtml(doc: unknown): string {
       a: (tag, attribs) => ({ tagName: 'a', attribs: { href: attribs.href, rel: 'nofollow noopener noreferrer ugc', target: '_blank' } }),
       img: (tag, attribs) => ({ tagName: 'img', attribs: { src: attribs.src, alt: attribs.alt || '', loading: 'lazy' } as Record<string, string> }),
     },
+    // Pictures only from SignedOn uploads: no outside images (shock content, or trackers logging readers' IPs).
+    exclusiveFilter: (frame) => frame.tag === 'img' && !isStorageUrl(frame.attribs.src || ''),
   });
 }
 

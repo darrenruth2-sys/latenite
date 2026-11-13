@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 const REASONS: [string, string][] = [['spam', 'Spam'], ['harassment', 'Harassment or bullying'], ['hate', 'Hate speech'], ['sexual', 'Sexual content'],
-  ['violence', 'Violence or threats'], ['self_harm', 'Self-harm'], ['impersonation', 'Pretending to be someone'], ['underage', 'Might be under 18'], ['other', 'Something else']];
+  ['intimate_image', 'Intimate image shared without consent'], ['child_safety', 'Sexualizes or endangers a child'],
+  ['violence', 'Violence or threats'], ['self_harm', 'Self-harm'], ['impersonation', 'Pretending to be someone'], ['copyright', 'Copyright (my work used without permission)'],
+  ['underage', 'Might be under 18'], ['other', 'Something else']];
 
 export function ReportButton({ type, id, owner, meId, label = 'Report', className = '' }: { type: string; id: string; owner?: string | null; meId: string | null; label?: string; className?: string }) {
   const [open, setOpen] = useState(false);

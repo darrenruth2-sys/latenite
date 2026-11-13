@@ -75,3 +75,49 @@ test('export lists are complete past the UI caps (1,100 friends, paged)', async 
   assert.equal((await me.c.rpc('friends_of', { p_user: me.id, p_limit: 5000 })).data.length, 500, 'the UI list is still capped (by design)');
   assert.ok((await anon().rpc('export_my_friends', { p_offset: 0, p_limit: 10 })).error, 'logged-out callers refused');
 });
+
+test('legal safety: takedown requests are private, urgent ones get a 48h clock, child-safety reports are preserved not deleted', async () => {
+  // anyone (via the server) can file; nobody else can read them
+  const id = (await admin.rpc('submit_takedown', { p_kind: 'intimate_image', p_urls: 'https://signedon.social/u/x', p_description: 'not consensual', p_name: 'Jane', p_email: 'jane@x.test',
+    p_contact: null, p_is_subject: true, p_sworn: true, p_signature: 'Jane', p_source: 'src1' })).data;
+  assert.ok(id);
+  assert.ok((await anon().rpc('submit_takedown', { p_kind: 'other', p_urls: 'x', p_description: 'x', p_name: 'x', p_email: 'a@b.co', p_contact: null, p_is_subject: false, p_sworn: false, p_signature: null, p_source: 'x' })).error, 'browser cannot call it directly');
+  const due = sql(`select round(extract(epoch from (due_at - created_at)) / 3600) from app.takedown_requests where id = '${id}'`);
+  assert.equal(due, '48');
+  const mod = await makeUser(uname('lmod')); await admin.from('moderators').insert({ user_id: mod.id });
+  const user = await makeUser(uname('luser'));
+  assert.ok((await user.c.rpc('mod_takedowns', { p_status: 'open' })).error, 'regular users cannot see takedowns');
+  assert.ok((await mod.c.rpc('mod_takedowns', { p_status: 'open' })).data.some((t) => t.id === id));
+  assert.ok((await mod.c.rpc('mod_urgent_count')).data >= 1, 'urgent badge counts it');
+  assert.equal((await user.c.rpc('mod_urgent_count')).data, 0);
+  assert.equal((await mod.c.rpc('mod_resolve_takedown', { p_id: id, p_status: 'removed', p_note: 'done' })).error, null);
+
+  // child-safety report: "remove" (which can delete) is refused; "preserve" hides, keeps evidence, suspends
+  const bad = await makeUser(uname('lbad')); const rep = await makeUser(uname('lrep'));
+  await befriend(bad, rep);
+  const post = (await bad.c.from('posts').insert({ author_id: bad.id, body: 'evidence text', visibility: 'friends' }).select().single()).data;
+  const r = (await rep.c.from('reports').insert({ reporter_id: rep.id, target_type: 'post', target_id: post.id, target_owner: bad.id, reason: 'child_safety' }).select().single()).data;
+  assert.match((await mod.c.rpc('mod_resolve', { p_report: r.id, p_action: 'remove' })).error?.message || '', /USE_PRESERVE/);
+  assert.equal((await mod.c.rpc('mod_resolve', { p_report: r.id, p_action: 'preserve', p_note: 'cybertip filed' })).error, null);
+  assert.equal(sql(`select count(*) from public.posts where id = '${post.id}' and hidden_at is not null`), '1', 'hidden, not deleted');
+  assert.equal(sql(`select content from app.legal_holds where report_id = '${r.id}'`), 'evidence text', 'evidence saved');
+  assert.equal(sql(`select suspended_at is not null from public.profiles where id = '${bad.id}'`), 't', 'account suspended');
+  assert.ok((await rep.c.from('reports').insert({ reporter_id: rep.id, target_type: 'post', target_id: post.id, target_owner: bad.id, reason: 'copyright' })).error === null, 'new reasons accepted');
+});
+
+test('pictures must be SignedOn uploads from your own folder; song art only from the music services', async () => {
+  const u = await makeUser(uname('pics')); const other = await makeUser(uname('other'));
+  const own = `http://localhost:54321/storage/v1/object/public/media/${u.id}/a.png`;
+  const theirs = `http://localhost:54321/storage/v1/object/public/media/${other.id}/a.png`;
+  assert.equal((await u.c.from('profiles').update({ avatar_url: own }).eq('id', u.id)).error, null);
+  assert.ok((await u.c.from('profiles').update({ avatar_url: 'https://evil.example/tracker.gif' }).eq('id', u.id)).error, 'outside avatar refused');
+  assert.ok((await u.c.from('profiles').update({ avatar_url: theirs }).eq('id', u.id)).error, 'someone else’s upload refused');
+  assert.ok((await u.c.from('profile_details').update({ banner_url: 'https://evil.example/x.jpg' }).eq('id', u.id)).error, 'outside banner refused');
+  assert.ok((await u.c.from('profile_details').update({ theme: { preset: 'midnight', bg_image: 'https://evil.example/bg.jpg' } }).eq('id', u.id)).error, 'outside background refused');
+  assert.equal((await u.c.from('profile_details').update({ theme: { preset: 'midnight', bg_image: own } }).eq('id', u.id)).error, null);
+  const song = { provider: 'spotify', url: 'https://open.spotify.com/track/abc', title: 'x' };
+  assert.equal((await u.c.from('profile_details').update({ music: { ...song, art: 'https://image-cdn-ak.spotifycdn.com/image/ab67' } }).eq('id', u.id)).error, null);
+  assert.ok((await u.c.from('profile_details').update({ music: { ...song, art: 'https://evil.example/art.jpg' } }).eq('id', u.id)).error, 'outside song art refused');
+  assert.ok((await u.c.from('posts').insert({ author_id: u.id, kind: 'photo', body: 'x', media: [{ url: 'https://evil.example/p.jpg' }] })).error, 'outside post photo refused');
+  assert.equal((await u.c.from('posts').insert({ author_id: u.id, kind: 'photo', body: 'x', media: [{ url: own, alt: 'me' }] })).error, null);
+});

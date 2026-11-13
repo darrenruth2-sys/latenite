@@ -1,6 +1,6 @@
 'use server';
 import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { friendlyError } from '@/lib/utils';
 import { captchaFrom } from '@/lib/captcha';
@@ -20,7 +20,22 @@ function ageOn(birth: Date) {
   return age;
 }
 
+// States whose laws require document-style age checks for every user. New signups from them are paused until we offer that.
+// Override with SIGNUP_BLOCKED_REGIONS (comma list like "US-MS,US-TN"; set it to "none" to allow all).
+const BLOCKED = (process.env.SIGNUP_BLOCKED_REGIONS || 'US-MS,US-TN').split(',').map((r) => r.trim().toUpperCase()).filter((r) => r && r !== 'NONE');
+const REGION_NAMES: Record<string, string> = { 'US-MS': 'Mississippi', 'US-TN': 'Tennessee', 'US-FL': 'Florida', 'US-NE': 'Nebraska', 'US-UT': 'Utah', 'US-TX': 'Texas' };
+export async function signupRegionBlock(): Promise<string | null> {
+  const h = await headers();
+  const region = `${h.get('x-vercel-ip-country') || ''}-${h.get('x-vercel-ip-country-region') || ''}`.toUpperCase();
+  return BLOCKED.includes(region) ? (REGION_NAMES[region] || region) : null;
+}
+const AGE_GATE = 'so_age_gate';
+
 export async function signUp(_: FormState, form: FormData): Promise<FormState> {
+  // Someone who just entered an under-18 birthday can't simply change it and try again (the lesson from Xanga's $1M FTC fine).
+  if ((await cookies()).get(AGE_GATE)) return { error: 'You need to be 18 or older to join SignedOn.' };
+  const region = await signupRegionBlock();
+  if (region) return { error: `SignedOn can’t accept new accounts from ${region} yet. State law there requires ID-based age checks for every user, and we’re working on it.` };
   const email = String(form.get('email') || '').trim();
   const password = String(form.get('password') || '');
   const username = String(form.get('username') || '').trim().toLowerCase();
@@ -33,7 +48,10 @@ export async function signUp(_: FormState, form: FormData): Promise<FormState> {
   if (password.length < 8) return { error: 'Password needs at least 8 characters.', fields };
   const b = new Date(birthdate + 'T00:00:00');
   if (!birthdate || isNaN(b.getTime()) || b.getFullYear() < 1900) return { error: 'Enter your birthday.', fields };
-  if (ageOn(b) < 18) return { error: 'You need to be 18 or older to join SignedOn.', fields };
+  if (ageOn(b) < 18) {
+    (await cookies()).set(AGE_GATE, '1', { httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 60 * 60 * 24 * 30 });
+    return { error: 'You need to be 18 or older to join SignedOn.' };
+  }
   if (form.get('agree') !== 'on') return { error: 'Please agree to the terms and community rules.', fields };
 
   const supabase = await createClient();

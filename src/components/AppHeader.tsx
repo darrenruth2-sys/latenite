@@ -7,7 +7,7 @@ import { Avatar } from '@/components/Avatar';
 import { logOut } from '@/app/actions/auth';
 import type { Me } from '@/lib/me';
 
-type Counts = { notifications: number; requests: number; messages: number };
+type Counts = { notifications: number; requests: number; messages: number; urgent?: number };
 
 function Badge({ n }: { n: number }) {
   if (!n) return null;
@@ -55,6 +55,9 @@ export function AppHeader({ me, counts }: { me: Me | null; counts: Counts }) {
                   </Link>
                 ))}
               </nav>
+              {!!counts.urgent && (
+                <Link href="/mod" className="flex min-h-10 items-center border-2 border-[#FF5A5A] bg-[#FF5A5A] px-2 text-sm font-extrabold text-ink" aria-label={`${counts.urgent} urgent moderation item${counts.urgent === 1 ? '' : 's'} with a 48-hour legal deadline`}>MOD {counts.urgent}</Link>
+              )}
               <Link href="/notifications" aria-label={`Notifications${counts.notifications + counts.requests ? `, ${counts.notifications + counts.requests} new` : ''}`}
                 className="relative ml-auto flex h-11 w-11 items-center justify-center text-muted hover:text-fg md:ml-0">
                 <Svg d={Icon.bell} />
@@ -75,6 +78,8 @@ export function AppHeader({ me, counts }: { me: Me | null; counts: Counts }) {
                     <Link role="menuitem" href="/blog/new" className="px-4 py-2.5 hover:bg-panel2">Write a blog post</Link>
                     <Link role="menuitem" href="/memories" className="px-4 py-2.5 hover:bg-panel2">Memories</Link>
                     <Link role="menuitem" href="/settings" className="px-4 py-2.5 hover:bg-panel2">Settings &amp; privacy</Link>
+                    <Link role="menuitem" href="/rules" className="px-4 py-2.5 hover:bg-panel2">Rules &amp; terms</Link>
+                    <Link role="menuitem" href="/report-content" className="px-4 py-2.5 hover:bg-panel2">Report a problem</Link>
                     {me.isModerator && <Link role="menuitem" href="/mod" className="px-4 py-2.5 text-amber hover:bg-panel2">Moderation</Link>}
                     <form action={logOut}><button type="submit" role="menuitem" className="w-full px-4 py-2.5 text-left text-muted hover:bg-panel2">Log out</button></form>
                   </div>
