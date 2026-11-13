@@ -1,6 +1,6 @@
 import test from 'node:test'; import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { admin, anon, makeUser, uname } from './helpers.mjs';
+import { admin, anon, makeUser, befriend, uname } from './helpers.mjs';
 
 const sql = (q) => execFileSync('psql', ['-h', '127.0.0.1', '-p', '54322', '-U', 'postgres', '-tAc', q], { encoding: 'utf8' }).trim();
 
@@ -42,3 +42,20 @@ test('waitlist: per-visitor limit, one visitor cannot lock out everyone, no publ
   assert.ok(Number((await anon().rpc('waitlist_count')).data) >= 6);
   sql(`delete from public.waitlist; delete from app.waitlist_attempts`);
 });
+
+test('founder at #1 works even when someone already has a full Top Friends list (rank limit 1..16)', async () => {
+  const owner = await makeUser(uname('full'));
+  const founder = await makeUser(uname('fdr'));
+  const pals = await Promise.all(Array.from({ length: 16 }, (_, i) => makeUser(uname('pal' + i))));
+  for (const p of pals) await befriend(owner, p);
+  assert.equal((await owner.c.rpc('set_top_friends', { p_ids: pals.map((p) => p.id) })).error, null);
+  sql(`insert into app.site_founder (singleton, user_id) values (true, '${founder.id}') on conflict (singleton) do update set user_id = excluded.user_id`);
+  sql(`select app.befriend_founder('${owner.id}', true)`);
+  const ranks = sql(`select string_agg(friend_id::text || ':' || rank, ',' order by rank) from public.top_friends where owner_id = '${owner.id}'`).split(',');
+  assert.equal(ranks.length, 16, 'still 16 slots');
+  assert.equal(ranks[0], `${founder.id}:1`, 'founder is #1');
+  assert.equal(ranks[1], `${pals[0].id}:2`, 'everyone else moved down one');
+  assert.ok(!ranks.some((r) => r.startsWith(pals[15].id)), 'the old #16 dropped off');
+  sql(`delete from app.site_founder`);
+});
+

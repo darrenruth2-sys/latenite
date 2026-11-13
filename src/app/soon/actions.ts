@@ -27,7 +27,6 @@ export async function joinWaitlist(_prev: WaitlistState, form: FormData): Promis
   }
   const res = data as { new: boolean; count: number };
   const hi = name ? `Thanks, ${name}! ` : 'Thanks! ';
-  return res.new
-    ? { ok: true, count: res.count, message: `${hi}You’re one of the first ${res.count.toLocaleString('en-US')}. We’ll email you the second the doors open.` }
-    : { ok: true, count: res.count, message: 'You’re already on the list — we haven’t forgotten you.' };
+  // Same answer whether the email was new or already listed, so the form can't be used to check who signed up.
+  return { ok: true, count: res.count, message: `${hi}You’re on the list. We’ll email you the second the doors open.` };
 }

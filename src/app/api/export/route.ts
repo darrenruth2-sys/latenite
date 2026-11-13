@@ -29,13 +29,20 @@ async function all(build: (from: number, to: number) => PromiseLike<{ data: any[
   const rows: unknown[] = [];
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await build(from, from + PAGE - 1);
-    if (error) return rows.length ? rows : null;
+    // First page refused = you have no access to that table (skip it). A later page failing = don't hand over half a list.
+    if (error) { if (from === 0) return null; throw new Error('export interrupted'); }
     rows.push(...(data || []));
     if (!data || data.length < PAGE) return rows;
   }
 }
 
 export async function GET() {
+  try { return await build(); } catch {
+    return NextResponse.json({ error: 'Your export was interrupted before it finished. Please try again in a minute.' }, { status: 503 });
+  }
+}
+
+async function build() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
