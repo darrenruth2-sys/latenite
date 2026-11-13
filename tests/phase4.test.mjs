@@ -44,10 +44,11 @@ test('bulletins + polls + gifts', async () => {
 test('communities: public/private, roles, posts', async () => {
   const o = await makeUser(uname('cown')); const m = await makeUser(uname('cmem')); const s = await makeUser(uname('cstr'));
   await befriend(o, m);
-  const { data: pub } = await o.c.rpc('create_community', { p_slug: 'label-makers', p_name: 'Label Makers Anonymous', p_description: 'we label everything' });
-  const { data: priv } = await o.c.rpc('create_community', { p_slug: 'secret-club', p_name: 'Secret Club', p_description: null, p_public: false });
+  const sfx = Math.random().toString(36).slice(2, 7);
+  const { data: pub } = await o.c.rpc('create_community', { p_slug: 'label-makers-' + sfx, p_name: 'Label Makers Anonymous', p_description: 'we label everything' });
+  const { data: priv } = await o.c.rpc('create_community', { p_slug: 'secret-club-' + sfx, p_name: 'Secret Club', p_description: null, p_public: false });
   assert.ok(pub && priv);
-  assert.ok((await o.c.rpc('create_community', { p_slug: 'label-makers', p_name: 'Dupe', p_description: null })).error, 'unique slug');
+  assert.ok((await o.c.rpc('create_community', { p_slug: 'label-makers-' + sfx, p_name: 'Dupe', p_description: null })).error, 'unique slug');
   assert.equal((await s.c.from('communities').select('id').eq('id', priv)).data.length, 0, 'private hidden');
   assert.ok((await s.c.rpc('join_community', { p_id: priv })).error, 'cannot self-join private');
   assert.equal((await s.c.rpc('join_community', { p_id: pub })).error, null);

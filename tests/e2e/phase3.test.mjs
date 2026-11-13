@@ -57,7 +57,7 @@ test('phase 3: real-time-ish chat, typing, receipts, nudges, away, photos, group
   await C.page.fill('#ms-msg', 'friday 8pm?'); await C.page.press('#ms-msg', 'Enter');
   await A.page.waitForTimeout(13000); // list refresh interval
   await A.page.locator('button', { hasText: 'Rink crew' }).first().click();
-  await A.page.getByText('friday 8pm?').waitFor();
+  await A.page.getByText('friday 8pm?').first().waitFor(); // it's in the chat and the list preview
   // phone: list first, then chat with back button
   const M = await newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   await M.goto(BASE + '/login');

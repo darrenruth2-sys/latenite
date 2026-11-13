@@ -9,7 +9,9 @@ export function colorFor(id: string) {
 export function initials(name: string) {
   const parts = name.replace(/[._]/g, ' ').trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return '?';
-  return (parts.length === 1 ? parts[0].slice(0, 2) : parts[0][0] + parts[1][0]).toUpperCase();
+  // Array.from splits by real characters, so an emoji is never cut in half (a half-emoji breaks the page).
+  const ch = (w: string, n: number) => Array.from(w).slice(0, n).join('');
+  return (parts.length === 1 ? ch(parts[0], 2) : ch(parts[0], 1) + ch(parts[1], 1)).toUpperCase();
 }
 
 export function timeAgo(iso: string, now = Date.now()) {

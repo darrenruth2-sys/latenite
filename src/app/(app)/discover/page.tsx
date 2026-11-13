@@ -11,13 +11,21 @@ export default async function Discover({ searchParams }: { searchParams: Promise
   const q = (sp.q || '').slice(0, 40), interest = (sp.interest || '').slice(0, 24), region = (sp.region || '').slice(0, 40);
   const { me, supabase } = await getMe();
   const searching = !!(q || interest || region);
-  const [people, featured, comms, myDisc] = await Promise.all([
+  // The header box says "people, interests, communities", so a plain search also matches interests and community names.
+  const word = q.trim().replace(/^@/, '');
+  const asInterest = !interest && /^[\p{L}\p{N} .&'-]{2,24}$/u.test(word) ? word.toLowerCase() : '';
+  const like = `%${word.replace(/[%_\\]/g, (c) => '\\' + c)}%`;
+  const [people, byInterest, featured, comms, myDisc] = await Promise.all([
     me ? supabase.rpc('discover_people', { p_q: q || null, p_interest: interest || null, p_region: region || null, p_limit: 36 }) : Promise.resolve({ data: [] }),
+    me && asInterest ? supabase.rpc('discover_people', { p_q: null, p_interest: asInterest, p_region: region || null, p_limit: 36 }) : Promise.resolve({ data: [] }),
     supabase.from('featured_profiles').select('note, week_of, profile:profiles!featured_profiles_profile_id_fkey(id, username, display_name, avatar_url, mood)').order('week_of', { ascending: false }).limit(3),
-    supabase.from('communities').select('slug, name, member_count, accent').eq('is_public', true).order('member_count', { ascending: false }).limit(6),
+    word
+      ? supabase.from('communities').select('slug, name, member_count, accent').eq('is_public', true).ilike('name', like).order('member_count', { ascending: false }).limit(12)
+      : supabase.from('communities').select('slug, name, member_count, accent').eq('is_public', true).order('member_count', { ascending: false }).limit(6),
     me ? supabase.from('profiles').select('discoverable').eq('id', me.id).single() : Promise.resolve({ data: null }),
   ]);
-  const results = (people.data || []) as R[];
+  const seen = new Set<string>();
+  const results = [...((people.data || []) as R[]), ...((byInterest.data || []) as R[])].filter((r) => !seen.has(r.id) && !!seen.add(r.id));
   const feat = (featured.data || []) as unknown as { note: string | null; profile: R }[];
   return (
     <div className="mx-auto flex max-w-[1200px] flex-col gap-7 px-4 py-6 sm:px-6">
@@ -56,9 +64,10 @@ export default async function Discover({ searchParams }: { searchParams: Promise
               <span><b className="block">{f.profile.display_name}</b><span className="text-sm text-muted">{f.note || 'Featured this week'}</span></span></Link></li>))}</ul>
         </section>
       )}
+      {word && (comms.data || []).length === 0 && <p className="text-sm text-muted">No communities match “{word}”. <Link href="/communities/new" className="link">Start one</Link>?</p>}
       {(comms.data || []).length > 0 && (
         <section aria-labelledby="dc-h" className="flex flex-col gap-3">
-          <div className="flex items-center justify-between"><h2 id="dc-h" className="label">Communities</h2><Link href="/communities" className="link inline-flex min-h-10 items-center text-sm">See all</Link></div>
+          <div className="flex items-center justify-between"><h2 id="dc-h" className="label">{word ? `Communities matching “${word}”` : 'Communities'}</h2><Link href="/communities" className="link inline-flex min-h-10 items-center text-sm">See all</Link></div>
           <ul className="flex flex-wrap gap-2">{(comms.data || []).map((c) => <li key={c.slug}><Link href={`/communities/${c.slug}`} className="chip min-h-10 px-3" style={{ borderColor: c.accent }}>{c.name} · {c.member_count}</Link></li>)}</ul>
         </section>
       )}

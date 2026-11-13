@@ -87,7 +87,11 @@ test('phase 1: signup, profile, friends, feed, privacy, password reset', async (
   await C.page.click('button:has-text("Block")');
   await B.page.waitForTimeout(500);
   const r = await B.page.goto(`${BASE}/u/${C.username}`);
-  assert.equal(r.status(), 404, 'blocked user sees 404');
+  // Pages stream behind a loading screen, so "not found" arrives as a not-found page (with noindex) rather than an HTTP 404.
+  assert.ok([200, 404].includes(r.status()));
+  await B.page.getByText('Nobody lives here.').waitFor();
+  assert.equal(await B.page.locator('meta[name=robots][content*=noindex]').count() > 0 || r.status() === 404, true, 'not-found is not indexed');
+  assert.equal(await B.page.getByText(C.display_name || C.username, { exact: true }).count(), 0, 'blocked profile content not shown');
   await C.page.goto(BASE + '/settings/privacy');
   await C.page.getByText(`@${B.username}`).waitFor();
 

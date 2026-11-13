@@ -7,7 +7,7 @@ type C = { id: string; slug: string; name: string; description: string | null; a
 export default async function Communities({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = '' } = await searchParams;
   const { me, supabase } = await getMe();
-  let query = supabase.from('communities').select('id, slug, name, description, accent, is_public, member_count').order('member_count', { ascending: false }).limit(60);
+  let query = supabase.from('communities').select('id, slug, name, description, accent, is_public, member_count').order('member_count', { ascending: false }).order('created_at', { ascending: false }).order('id').limit(60);
   if (q.trim()) query = query.ilike('name', `%${q.trim().replace(/[%_]/g, '')}%`);
   const [{ data }, mine] = await Promise.all([query, me ? supabase.from('community_members').select('community_id').eq('user_id', me.id) : Promise.resolve({ data: [] })]);
   const mineIds = new Set((mine.data || []).map((m: { community_id: string }) => m.community_id));
