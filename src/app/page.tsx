@@ -6,7 +6,7 @@ import { ClaimForm } from './ClaimForm';
 
 const FEATURES = [
   { n: '01', c: '#FF4FA3', t: 'Top Friends', d: 'Top 4, 8, 12 or 16. Drag to rank. Yes, people will notice. You can hide the order if you’d rather keep the peace.' },
-  { n: '02', c: '#38E1FF', t: 'Profile songs', d: 'Pick a song for your page from Spotify, YouTube, Apple Music or SoundCloud. Visitors press play — no surprise autoplay.' },
+  { n: '02', c: '#38E1FF', t: 'Profile songs', d: 'Pick a song for your page from Spotify, YouTube, Apple Music or SoundCloud. Autoplay it old-school if you want. Visitors can always mute it.' },
   { n: '03', c: '#5CFF8A', t: 'Who’s been by', d: 'See recent visitors and your visit count. Browse privately whenever you want — and the rules are the same for everyone.' },
   { n: '04', c: '#FFC23D', t: 'The guestbook', d: 'Leave messages, stickers and pics on a friend’s page. Owners can hide or delete anything, any time.' },
   { n: '05', c: '#9B7BFF', t: 'Messenger', d: 'Buddy list, away messages, custom status and the nudge. Rate-limited so it stays fun, and you can switch nudges off.' },

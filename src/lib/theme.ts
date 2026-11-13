@@ -4,10 +4,24 @@
 export type ThemeTokens = {
   preset?: string; page?: string; card?: string; text?: string; muted?: string; line?: string; accent?: string; on_accent?: string;
   banner_a?: string; banner_b?: string; pattern?: Pattern; font?: FontKey; bg_image?: string | null; radius?: 'none' | 'soft' | 'round'; shadow?: 'none' | 'hard' | 'glow';
+  // background picture layout
+  bg_size?: BgSize; bg_x?: number; bg_y?: number; bg_fixed?: boolean; bg_dim?: number;
+  // cover photo framing (drag to reposition, zoom in)
+  banner_x?: number; banner_y?: number; banner_zoom?: number;
+};
+export type BgSize = 'cover' | 'contain' | 'tile' | 'stretch';
+export const BG_SIZES: { key: BgSize; label: string }[] = [
+  { key: 'cover', label: 'Fill' }, { key: 'contain', label: 'Fit' }, { key: 'tile', label: 'Tile' }, { key: 'stretch', label: 'Stretch' },
+];
+type LayoutKeys = 'bg_size' | 'bg_x' | 'bg_y' | 'bg_fixed' | 'bg_dim' | 'banner_x' | 'banner_y' | 'banner_zoom';
+/** Defaults for the picture layout settings (same for every preset). */
+export const LAYOUT_DEFAULTS: Required<Pick<ThemeTokens, LayoutKeys>> = {
+  bg_size: 'cover', bg_x: 50, bg_y: 50, bg_fixed: true, bg_dim: 0, banner_x: 50, banner_y: 50, banner_zoom: 100,
 };
 export type Pattern = 'none' | 'dots' | 'grid' | 'stripes' | 'checker' | 'scanlines' | 'stars' | 'hearts';
 export type FontKey = 'bold' | 'serif' | 'pixel' | 'mono' | 'round';
-type Full = Required<Omit<ThemeTokens, 'bg_image'>> & { bg_image: string | null };
+type Base = Required<Omit<ThemeTokens, 'bg_image' | LayoutKeys>> & { bg_image: string | null };
+type Full = Base & Required<Pick<ThemeTokens, LayoutKeys>>;
 
 export const FONTS: Record<FontKey, { label: string; stack: string }> = {
   bold: { label: 'Bold', stack: 'var(--font-display)' },
@@ -18,7 +32,7 @@ export const FONTS: Record<FontKey, { label: string; stack: string }> = {
 };
 export const PATTERNS: Pattern[] = ['none', 'dots', 'grid', 'stripes', 'checker', 'scanlines', 'stars', 'hearts'];
 
-export const PRESETS: Record<string, { name: string } & Full> = {
+export const PRESETS: Record<string, { name: string } & Base> = {
   midnight: { name: 'Midnight', preset: 'midnight', page: '#0A0A18', card: '#13132A', text: '#EDEBFF', muted: '#C9C6EE', line: '#2A2A55', accent: '#FF4FA3', on_accent: '#0A0A18', banner_a: '#2B0F4D', banner_b: '#3A1466', pattern: 'dots', font: 'bold', bg_image: null, radius: 'none', shadow: 'hard' },
   bubblegum: { name: 'Bubblegum', preset: 'bubblegum', page: '#FFD6EC', card: '#FFFFFF', text: '#1A0F2E', muted: '#5A3D6B', line: '#E7B8D2', accent: '#D4146F', on_accent: '#FFFFFF', banner_a: '#FF8FC8', banner_b: '#FFFFFF', pattern: 'checker', font: 'round', bg_image: null, radius: 'soft', shadow: 'hard' },
   static: { name: 'Static', preset: 'static', page: '#0E0E0E', card: '#121A13', text: '#E6FFE9', muted: '#9FD8A8', line: '#2F5A38', accent: '#5CFF8A', on_accent: '#0A0A18', banner_a: '#0E2A14', banner_b: '#163D1E', pattern: 'scanlines', font: 'pixel', bg_image: null, radius: 'none', shadow: 'glow' },
@@ -36,7 +50,7 @@ const URL_OK = /^https?:\/\/[^\s"'()<>\\]+$/;
 
 export function resolveTheme(t: ThemeTokens | null | undefined): Full {
   const base = PRESETS[t?.preset || 'midnight'] || PRESETS.midnight;
-  const pick = (k: keyof Full, ok: (v: unknown) => boolean) => (t && ok(t[k as keyof ThemeTokens]) ? t[k as keyof ThemeTokens] : base[k]);
+  const pick = (k: keyof Base, ok: (v: unknown) => boolean) => (t && ok(t[k as keyof ThemeTokens]) ? t[k as keyof ThemeTokens] : base[k]);
   const hex = (v: unknown) => typeof v === 'string' && HEX.test(v);
   return {
     preset: base.preset,
@@ -48,7 +62,18 @@ export function resolveTheme(t: ThemeTokens | null | undefined): Full {
     radius: pick('radius', (v) => v === 'none' || v === 'soft' || v === 'round') as Full['radius'],
     shadow: pick('shadow', (v) => v === 'none' || v === 'hard' || v === 'glow') as Full['shadow'],
     bg_image: typeof t?.bg_image === 'string' && URL_OK.test(t.bg_image) ? t.bg_image : null,
+    bg_size: BG_SIZES.some((b) => b.key === t?.bg_size) ? t!.bg_size! : LAYOUT_DEFAULTS.bg_size,
+    bg_x: num(t?.bg_x, 0, 100, LAYOUT_DEFAULTS.bg_x), bg_y: num(t?.bg_y, 0, 100, LAYOUT_DEFAULTS.bg_y),
+    bg_fixed: typeof t?.bg_fixed === 'boolean' ? t.bg_fixed : LAYOUT_DEFAULTS.bg_fixed,
+    bg_dim: num(t?.bg_dim, 0, 80, LAYOUT_DEFAULTS.bg_dim),
+    banner_x: num(t?.banner_x, 0, 100, LAYOUT_DEFAULTS.banner_x), banner_y: num(t?.banner_y, 0, 100, LAYOUT_DEFAULTS.banner_y),
+    banner_zoom: num(t?.banner_zoom, 100, 300, LAYOUT_DEFAULTS.banner_zoom),
   };
+}
+
+/** A whole number inside [lo, hi], or the fallback. */
+function num(v: unknown, lo: number, hi: number, fallback: number) {
+  return typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, Math.round(v))) : fallback;
 }
 
 function rgba(hex: string, a: number) {
@@ -80,13 +105,23 @@ export function themeVars(t: Full): React.CSSProperties {
     '--banner': `repeating-linear-gradient(45deg, ${t.banner_a} 0 18px, ${t.banner_b} 18px 36px)`,
     '--head': FONTS[t.font].stack, '--radius': radius, '--shadow': shadow,
     backgroundColor: t.page,
-    backgroundImage: t.bg_image ? `url("${t.bg_image}")` : pat.image,
-    backgroundSize: t.bg_image ? 'cover' : pat.size,
-    backgroundAttachment: t.bg_image ? 'fixed' : undefined,
-    backgroundPosition: t.bg_image ? 'center' : undefined,
+    ...(t.bg_image ? bgImageCss(t) : { backgroundImage: pat.image, backgroundSize: pat.size }),
     color: t.text,
     colorScheme: luminance(t.page) > 0.5 ? 'light' : 'dark',
   } as React.CSSProperties;
+}
+
+/** Background picture with its layout settings. The dim layer is a solid tint of the page color over the picture. */
+export function bgImageCss(t: Full): React.CSSProperties {
+  const dim = t.bg_dim > 0 ? `linear-gradient(${rgba(t.page, t.bg_dim / 100)}, ${rgba(t.page, t.bg_dim / 100)}), ` : '';
+  const size = t.bg_size === 'tile' ? 'auto' : t.bg_size === 'stretch' ? '100% 100%' : t.bg_size;
+  return {
+    backgroundImage: `${dim}url("${t.bg_image}")`,
+    backgroundSize: dim ? `auto, ${size}` : size,
+    backgroundRepeat: t.bg_size === 'tile' ? 'repeat' : 'no-repeat',
+    backgroundPosition: `${t.bg_x}% ${t.bg_y}%`,
+    backgroundAttachment: t.bg_fixed ? 'fixed' : 'scroll',
+  };
 }
 
 export function luminance(hex: string) {
@@ -101,10 +136,10 @@ export function contrast(a: string, b: string) {
 
 /** Only the tokens that differ from the preset get stored. */
 export function compactTheme(t: Full): ThemeTokens {
-  const base = PRESETS[t.preset] || PRESETS.midnight;
+  const base = { ...LAYOUT_DEFAULTS, ...(PRESETS[t.preset] || PRESETS.midnight) } as Record<string, unknown>;
   const out: ThemeTokens = { preset: t.preset };
   (Object.keys(t) as (keyof Full)[]).forEach((k) => {
-    if (k !== 'preset' && t[k] !== base[k] && t[k] != null) (out as Record<string, unknown>)[k] = t[k];
+    if (k !== 'preset' && t[k] !== base[k as string] && t[k] != null) (out as Record<string, unknown>)[k] = t[k];
   });
   return out;
 }

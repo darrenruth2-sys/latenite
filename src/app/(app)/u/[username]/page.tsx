@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { sanitizeCss } from '@/lib/customCss';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getMe } from '@/lib/me';
@@ -146,7 +147,7 @@ export default async function ProfilePage({ params, searchParams }: Params) {
         )}
       </section>
       {meId && !isMe && (
-        <div className="flex flex-wrap gap-1 [&_button]:text-[var(--muted)]">
+        <div className="so-safe flex flex-wrap gap-1 [&_button]:text-[var(--muted)]">
           <BlockButton meId={meId} otherId={p.id} name={p.display_name} blocked={false} />
           <ReportButton type="profile" id={p.id} owner={p.id} meId={meId} label="Report page" />
         </div>
@@ -161,6 +162,7 @@ export default async function ProfilePage({ params, searchParams }: Params) {
         profile={p} isMe={isMe} startEditing={edit === '1'} online={extras.online} statusLine={extras.statusLine}
         details={{ theme: details.theme, layout: details.layout, top_count: details.top_count, top_hidden: details.top_hidden, music: details.music,
           guestbook_policy: policy, banner_url: details.banner_url, headline: details.headline }}
+        customCss={{ raw: isMe ? details.custom_css || '' : '', safe: sanitizeCss(details.custom_css).css }}
         top={(topRes.data || []) as TopFriend[]} pool={(pool.data || []) as TopFriend[]}
         slots={slots} side={side} actions={actions} badges={extras.badges} themeGalleryEnabled={extras.themeGallery}
       />

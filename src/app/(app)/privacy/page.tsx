@@ -6,7 +6,7 @@ export default function Privacy() {
     ['What we store', 'Your account email, birthday (only to confirm you’re 18+, never shown), what you put on your page, your posts, messages and settings.'],
     ['Who sees what', 'Public pages are visible to anyone; private pages only to friends. Posts can be Friends, Top Friends or Public. Messages are only visible to people in the conversation.'],
     ['Profile visits', 'Visits are recorded once per day per person so the owner can see who stopped by. Turn on private browsing and nothing is recorded — but you won’t see your own visitors either.'],
-    ['Music players', 'Profile songs load from Spotify, YouTube, Apple Music or SoundCloud only after you press play. Those services have their own privacy policies.'],
+    ['Music players', 'Profile songs come from Spotify, YouTube, Apple Music or SoundCloud. Most load only after you press play. If a page owner turns on autoplay for a YouTube or SoundCloud song, that player loads when you open their page. Click “Stop autoplay on profiles” on any player to turn that off for yourself. Those services have their own privacy policies.'],
     ['No selling, no ads profiling', 'We don’t sell your data and there’s no algorithm deciding what you see in your friends feed.'],
     ['Launch list', 'If you signed the guestbook before launch, we keep your email (plus the name and note you gave, if any) only to tell you when SignedOn opens. It’s never shown publicly or sold. To stop spam bots, we briefly keep a scrambled one-way code made from your network address (never the address itself) and delete it within an hour. Email us to be removed.'],
     ['Your controls', 'Download everything or delete your account any time from Settings → Account & data.'],

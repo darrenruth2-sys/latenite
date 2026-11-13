@@ -67,7 +67,8 @@ export function AppHeader({ me, counts }: { me: Me | null; counts: Counts }) {
                 </button>
                 {menu && (
                   <div role="menu" className="absolute right-0 top-12 z-40 flex w-56 flex-col border-2 border-fg bg-panel py-1 shadow-[6px_6px_0_var(--color-cyan)]"
-                    onClick={() => setMenu(false)}>
+                    // Close after following a link. Not for Log out: closing removes its form before it can send.
+                    onClick={(e) => { if ((e.target as HTMLElement).closest('a')) setMenu(false); }}>
                     <Link role="menuitem" href={myPage} className="px-4 py-2.5 hover:bg-panel2">My page</Link>
                     <Link role="menuitem" href={`/u/${me.username}?edit=1`} className="px-4 py-2.5 hover:bg-panel2">Customize my page</Link>
                     <Link role="menuitem" href="/friends" className="px-4 py-2.5 hover:bg-panel2">Friends <Badge n={counts.requests} /></Link>
@@ -75,7 +76,7 @@ export function AppHeader({ me, counts }: { me: Me | null; counts: Counts }) {
                     <Link role="menuitem" href="/memories" className="px-4 py-2.5 hover:bg-panel2">Memories</Link>
                     <Link role="menuitem" href="/settings" className="px-4 py-2.5 hover:bg-panel2">Settings &amp; privacy</Link>
                     {me.isModerator && <Link role="menuitem" href="/mod" className="px-4 py-2.5 text-amber hover:bg-panel2">Moderation</Link>}
-                    <form action={logOut}><button role="menuitem" className="w-full px-4 py-2.5 text-left text-muted hover:bg-panel2">Log out</button></form>
+                    <form action={logOut}><button type="submit" role="menuitem" className="w-full px-4 py-2.5 text-left text-muted hover:bg-panel2">Log out</button></form>
                   </div>
                 )}
               </div>
