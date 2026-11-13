@@ -8,14 +8,27 @@ import { friendlyError } from '@/lib/utils';
 import { MOODS } from '@/lib/moods';
 import { Avatar } from '@/components/Avatar';
 import type { Me } from '@/lib/me';
+import { Banner } from '@/components/profile/ProfileView';
+import { resolveTheme, compactTheme, type ThemeTokens } from '@/lib/theme';
 
-type Details = { headline: string | null; bio: string | null; meet: string | null; region: string | null; interests: string[]; banner_url: string | null };
+type Details = { headline: string | null; bio: string | null; meet: string | null; region: string | null; interests: string[]; banner_url: string | null; theme: ThemeTokens };
 
 export function ProfileForm({ me, details }: { me: Me; details: Details }) {
   const [f, setF] = useState({ display_name: me.display_name, mood: me.mood || '', headline: details.headline || '', bio: details.bio || '', meet: details.meet || '', region: details.region || '', interests: details.interests.join(', ') });
   const [avatar, setAvatar] = useState(me.avatar_url);
   const [banner, setBanner] = useState(details.banner_url);
   const [busy, setBusy] = useState<string | null>(null);
+  const saved = resolveTheme(details.theme);
+  const [frame, setFrame] = useState({ banner_x: saved.banner_x, banner_y: saved.banner_y, banner_zoom: saved.banner_zoom });
+  const [frameSaved, setFrameSaved] = useState(frame);
+  const frameDirty = JSON.stringify(frame) !== JSON.stringify(frameSaved);
+  async function saveFrame() {
+    setBusy('frame'); setMsg({});
+    // only the cover-photo framing changes; the rest of the theme stays as it is
+    const { error } = await sb.from('profile_details').update({ theme: compactTheme({ ...resolveTheme(details.theme), ...frame }) }).eq('id', me.id);
+    setBusy(null);
+    if (error) setMsg({ error: friendlyError(error) }); else { setFrameSaved(frame); setMsg({ ok: 'Cover photo position saved.' }); router.refresh(); }
+  }
   const [msg, setMsg] = useState<{ ok?: string; error?: string }>({});
   const router = useRouter();
   const sb = createClient();
@@ -68,7 +81,18 @@ export function ProfileForm({ me, details }: { me: Me; details: Details }) {
         </div>
         <div className="flex flex-col gap-2">
           <span className="label">Banner</span>
-          <div className="h-24 border-2 border-line" style={banner ? { background: `url(${banner}) center/cover` } : { background: 'repeating-linear-gradient(45deg,#2B0F4D 0 14px,#3A1466 14px 28px)' }} />
+          <div className="border-2 border-line" style={banner ? undefined : { background: 'repeating-linear-gradient(45deg,#2B0F4D 0 14px,#3A1466 14px 28px)' }}>
+            {banner ? <Banner url={banner} t={frame} editing className="h-36 sm:h-48" onMove={(x, y) => setFrame({ ...frame, banner_x: x, banner_y: y })} /> : <div className="h-36 sm:h-48" />}
+          </div>
+          {banner && (
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex min-w-[200px] flex-1 items-center gap-2 text-sm">Zoom
+                <input type="range" min={100} max={300} value={frame.banner_zoom} onChange={(e) => setFrame({ ...frame, banner_zoom: Number(e.target.value) })} className="h-6 flex-1 accent-cyan" />
+                <span className="w-12 text-dim">{frame.banner_zoom}%</span></label>
+              <button type="button" className="btn-ghost btn-sm" onClick={() => setFrame({ banner_x: 50, banner_y: 50, banner_zoom: 100 })}>Re-center</button>
+              <button type="button" className="btn-cyan btn-sm" onClick={saveFrame} disabled={!frameDirty || busy === 'frame'}>{busy === 'frame' ? 'Saving…' : frameDirty ? 'Save position' : 'Position saved'}</button>
+            </div>
+          )}
           <div className="flex gap-2">
             <label className="btn-ghost btn-sm cursor-pointer">{busy === 'banner' ? 'Uploading…' : 'Upload banner'}
               <input type="file" accept="image/*" className="sr-only" onChange={(e) => upload('banner', e.target.files?.[0])} disabled={!!busy} /></label>

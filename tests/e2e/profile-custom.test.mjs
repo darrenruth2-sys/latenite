@@ -91,3 +91,25 @@ test('log out from the account menu works', async () => {
   await page.goto(`${BASE}/feed`);
   await page.waitForURL(/\/login/);
 });
+
+test('Edit profile page: drag + zoom the cover photo and save just the position', async () => {
+  const C = await makeUser(uname('css_c'));
+  await C.c.from('profile_details').update({ banner_url: PIC, theme: { preset: 'forest', accent: '#FF7B00' } }).eq('id', C.id);
+  const p3 = await newPage({ viewport: { width: 1280, height: 900 } }); p3.removeAllListeners('console');
+  await p3.goto(BASE + '/login');
+  await p3.fill('input[name=email]', C.email); await p3.fill('input[name=password]', 'password123');
+  await p3.click('button[type=submit]'); await p3.waitForURL(/\/feed/);
+  await p3.goto(BASE + '/settings/profile');
+  const b = p3.locator('.so-banner'); await b.waitFor();
+  const box = await b.boundingBox();
+  await p3.mouse.move(box.x + 300, box.y + 80); await p3.mouse.down();
+  await p3.mouse.move(box.x + 150, box.y + 20, { steps: 5 }); await p3.mouse.up();
+  await p3.locator('input[type=range]').first().fill('180');
+  await p3.getByRole('button', { name: 'Save position' }).click();
+  await p3.getByText('Cover photo position saved.').waitFor();
+  const { data } = await C.c.from('profile_details').select('theme').eq('id', C.id).single();
+  assert.equal(data.theme.banner_zoom, 180);
+  assert.ok(data.theme.banner_x !== 50 || data.theme.banner_y !== 50, 'moved');
+  assert.equal(data.theme.accent, '#FF7B00', 'rest of the theme kept');
+  await p3.close();
+});

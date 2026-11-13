@@ -270,6 +270,9 @@ function Editor({ cssNotes, s, setS, setTheme, profileId, save, saving, dirty, m
             <input className="field min-h-9 text-sm" aria-label="Artist" placeholder="Artist" maxLength={100} value={s.music.artist || ''} onChange={(e) => setS({ ...s, music: { ...s.music!, artist: e.target.value } })} />
             <label className="col-span-2 flex min-h-10 items-center gap-2.5 text-sm"><input type="checkbox" className="h-5 w-5 accent-pink" checked={s.music.autoplay !== false}
               onChange={(e) => setS({ ...s, music: { ...s.music!, autoplay: e.target.checked } })} />Play automatically when people visit (old-school style)</label>
+            {s.music.autoplay !== false && (s.music.provider === 'spotify' || s.music.provider === 'apple') && (
+              <p role="note" className="col-span-2 border-2 border-amber px-2 py-1.5 text-xs text-amber">{PROVIDER_NAME[s.music.provider as keyof typeof PROVIDER_NAME]} doesn&apos;t allow autoplay on any website. For autoplay, paste the same song&apos;s YouTube or SoundCloud link instead.</p>
+            )}
             <p className="col-span-2 text-xs text-dim">From {PROVIDER_NAME[s.music.provider as keyof typeof PROVIDER_NAME]}. <button type="button" className="link" onClick={() => { setS({ ...s, music: null }); setMusicUrl(''); }}>Remove song</button></p>
           </div>
         )}
@@ -337,7 +340,7 @@ function Slider({ label, value, min, max, unit = '', onChange }: { label: string
 }
 
 /** Cover photo. While editing, drag it to choose which part shows. */
-function Banner({ url, t, editing, onMove, children }: { url: string | null; t: ReturnType<typeof resolveTheme>; editing: boolean; onMove: (x: number, y: number) => void; children: React.ReactNode }) {
+export function Banner({ url, t, editing, onMove, children, className = 'h-36 sm:h-48' }: { url: string | null; t: { banner_x: number; banner_y: number; banner_zoom: number }; editing: boolean; onMove: (x: number, y: number) => void; children?: React.ReactNode; className?: string }) {
   const box = useRef<HTMLDivElement>(null);
   const drag = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
   const canDrag = editing && !!url;
@@ -362,7 +365,7 @@ function Banner({ url, t, editing, onMove, children }: { url: string | null; t: 
     onMove(Math.min(100, Math.max(0, t.banner_x + v[0])), Math.min(100, Math.max(0, t.banner_y + v[1])));
   }
   return (
-    <div ref={box} className={`so-banner relative h-36 overflow-hidden sm:h-48 ${canDrag ? 'cursor-grab touch-none select-none active:cursor-grabbing' : ''}`}
+    <div ref={box} className={`so-banner relative overflow-hidden ${className} ${canDrag ? 'cursor-grab touch-none select-none active:cursor-grabbing' : ''}`}
       style={url ? undefined : { background: 'var(--banner)' }}
       onPointerDown={down} onPointerMove={moveTo} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}
       tabIndex={canDrag ? 0 : undefined} onKeyDown={key} role={canDrag ? 'application' : undefined}
