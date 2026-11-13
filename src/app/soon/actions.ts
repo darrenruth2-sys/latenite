@@ -1,5 +1,7 @@
 'use server';
-import { createClient } from '@/lib/supabase/server';
+import { createHash } from 'node:crypto';
+import { headers } from 'next/headers';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export type WaitlistState = { ok: boolean; message: string; count?: number } | undefined;
 
@@ -12,10 +14,15 @@ export async function joinWaitlist(_prev: WaitlistState, form: FormData): Promis
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 254) {
     return { ok: false, message: 'That email doesn’t look right. Try again?' };
   }
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('join_waitlist', { p_email: email, p_name: name || null, p_miss: miss || null });
+  // Rate limits are per visitor. We only ever store a salted one-way hash of the network address, never the address.
+  const h = await headers();
+  const ip = (h.get('x-forwarded-for') || '').split(',')[0].trim() || h.get('x-real-ip') || 'unknown';
+  const salt = process.env.WAITLIST_SALT || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const source = createHash('sha256').update(`${salt}:${ip}`).digest('hex').slice(0, 32);
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.rpc('join_waitlist', { p_email: email, p_name: name || null, p_miss: miss || null, p_source: source });
   if (error) {
-    if (error.message.includes('AH_RATE_LIMIT')) return { ok: false, message: 'Lots of people signing right now. Give it a minute and try again.' };
+    if (error.message.includes('AH_RATE_LIMIT')) return { ok: false, message: 'Whoa, that’s a lot of tries. Give it a few minutes and try again.' };
     return { ok: false, message: 'Something glitched (very 2006 of us). Try again in a sec.' };
   }
   const res = data as { new: boolean; count: number };

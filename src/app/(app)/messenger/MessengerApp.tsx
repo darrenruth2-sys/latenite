@@ -31,6 +31,9 @@ function beep() {
   } catch { /* no audio */ }
 }
 
+
+const RECENT = 150; // newest messages kept fresh by polling
+const OLDER_PAGE = 100; // history loaded per "Load older" tap
 export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, presence, settings, startError }:
   { me: Me; initialBuddies: Buddy[]; initialConvs: Conv[]; initialActive: string | null; presence: Presence; settings: { allow_nudges: boolean; read_receipts: boolean }; startError: string }) {
   const sb = useMemo(() => createClient(), []);
@@ -41,6 +44,10 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
   const [active, setActive] = useState<string | null>(initialActive);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
+  // Older history you've scrolled back to. Polling only refreshes the newest page, so this is kept separately.
+  const [older, setOlder] = useState<Msg[]>([]);
+  const [hasOlder, setHasOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [state, setState] = useState<{ user_id: string; typing: boolean; last_read_at: string | null }[]>([]);
   const [me2, setMe2] = useState<Presence>(presence);
   const [q, setQ] = useState('');
@@ -95,7 +102,7 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
     let res;
     try {
       res = await sb.from('messages').select('id, conversation_id, sender_id, kind, body, media_path, created_at')
-        .eq('conversation_id', convId).order('created_at', { ascending: false }).limit(150)
+        .eq('conversation_id', convId).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(RECENT)
         .retry(false).abortSignal(AbortSignal.timeout(8000)); // we poll anyway — fail fast so "reconnecting" shows and nothing hangs
     } catch { res = { data: null, error: new Error('network') }; }
     const { data, error } = res;
@@ -107,6 +114,7 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
     if (error || !data) { setNetFails((n) => n + 1); return; }
     setNetFails(0);
     const list = (data as Msg[]).reverse();
+    if (initial) setHasOlder(list.length >= RECENT);
     const fresh = list.filter((m) => !seenIds.current.has(m.id));
     list.forEach((m) => seenIds.current.add(m.id));
     if (!initial) {
@@ -126,7 +134,7 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
   // open a conversation
   useEffect(() => {
     if (!active) return;
-    seenIds.current = new Set(); setMsgs([]); setState([]); setErr(''); stickToBottom.current = true; setNetFails(0);
+    seenIds.current = new Set(); setMsgs([]); setOlder([]); setHasOlder(false); setState([]); setErr(''); stickToBottom.current = true; setNetFails(0);
     fetchMsgs(active, true).then(() => setConvs((cs) => cs.map((c) => (c.id === active ? { ...c, unread: 0 } : c))));
     const url = `/messenger?c=${active}`;
     if (window.location.search !== `?c=${active}`) window.history.replaceState(null, '', url);
@@ -161,6 +169,7 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
   }, [active, fetchMsgs, refreshLists, markRead, sb]);
 
   // Follow new messages only if you're already at the bottom (or you just sent one) — never yank you while reading history.
+  const shown = older.length ? [...older.filter((o) => !msgs.some((m) => m.id === o.id)), ...msgs] : msgs;
   const lastMsg = msgs[msgs.length - 1];
   useEffect(() => {
     const el = listRef.current; if (!el) return;
@@ -269,13 +278,35 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
     setNotifyOn((await Notification.requestPermission()) === 'granted');
   }
 
+  // Load the next page of history above what's shown, keeping your scroll spot.
+  async function loadOlder() {
+    const convId = active; if (!convId || loadingOlder) return;
+    const first = shown.find((m) => !m.pending && !m.failed); if (!first) return;
+    setLoadingOlder(true);
+    const el = listRef.current; const fromBottom = el ? el.scrollHeight - el.scrollTop : 0;
+    const { data, error } = await sb.from('messages').select('id, conversation_id, sender_id, kind, body, media_path, created_at')
+      .eq('conversation_id', convId)
+      // strictly before the oldest shown message; id breaks ties when two share a timestamp
+      .or(`created_at.lt."${first.created_at}",and(created_at.eq."${first.created_at}",id.lt.${first.id})`)
+      .order('created_at', { ascending: false }).order('id', { ascending: false }).limit(OLDER_PAGE);
+    setLoadingOlder(false);
+    if (convId !== activeRef.current) return;
+    if (error || !data) { setErr('Couldn’t load older messages. Try again.'); return; }
+    const page = (data as Msg[]).reverse();
+    page.forEach((m) => seenIds.current.add(m.id));
+    setOlder((o) => [...page, ...o]);
+    setHasOlder(page.length >= OLDER_PAGE);
+    stickToBottom.current = false;
+    requestAnimationFrame(() => { if (el) el.scrollTop = el.scrollHeight - fromBottom; });
+  }
+
   // signed URLs for private media
   useEffect(() => {
-    const need = msgs.filter((m) => m.media_path && !urls[m.media_path]).map((m) => m.media_path!);
+    const need = shown.filter((m) => m.media_path && !urls[m.media_path]).map((m) => m.media_path!);
     if (!need.length) return;
     Promise.all(need.map(async (p) => [p, (await sb.storage.from('private-media').createSignedUrl(p, 3600)).data?.signedUrl] as const))
       .then((pairs) => setUrls((u) => ({ ...u, ...(Object.fromEntries(pairs.filter(([, v]) => v)) as Record<string, string>) })));
-  }, [msgs]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [shown.length, msgs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const ql = q.toLowerCase();
   const filtered = buddies.filter((b) => !ql || b.username.includes(ql) || b.display_name.toLowerCase().includes(ql));
@@ -413,7 +444,13 @@ export function MessengerApp({ me, initialBuddies, initialConvs, initialActive, 
               className="flex flex-1 flex-col gap-3.5 overflow-y-auto p-4">
               {loadingMsgs && <p className="m-auto text-sm text-[#5A4A80]">Loading…</p>}
               {!loadingMsgs && msgs.length === 0 && <div className="m-auto text-center"><p className="font-pixel text-[26px] text-[#6B2FD6]">no messages yet</p><p className="text-sm text-[#5A4A80]">Say hi. Your first message starts the conversation.</p></div>}
-              {msgs.map((m) => {
+              {!loadingMsgs && hasOlder && (
+                <button type="button" onClick={loadOlder} disabled={loadingOlder}
+                  className="min-h-10 self-center border-2 border-[#D9D2F5] bg-white px-4 text-sm font-semibold text-[#6B2FD6] hover:border-[#6B2FD6] disabled:opacity-60">
+                  {loadingOlder ? 'Loading…' : 'Load older messages'}
+                </button>
+              )}
+              {shown.map((m) => {
                 if (m.kind === 'nudge') return <p key={m.id} className="self-center border border-dashed border-pink bg-[#FFE3F1] px-3 py-0.5 font-pixel text-[19px] text-[#A1125C]">{m.sender_id === me.id ? 'You sent a nudge!' : `${nameOf(m.sender_id)} sent you a nudge!`}</p>;
                 if (m.kind === 'system') return <p key={m.id} className="self-center text-xs text-[#5A4A80]">{nameOf(m.sender_id)} {m.body}</p>;
                 if (m.kind === 'away') return <p key={m.id} className="self-start border-2 border-dashed border-[#B8860B] bg-[#FFF6DA] px-3 py-1 text-sm text-[#6B4A00]"><b>{nameOf(m.sender_id)} is away:</b> {m.body}</p>;

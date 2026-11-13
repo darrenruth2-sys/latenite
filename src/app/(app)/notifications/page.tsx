@@ -13,6 +13,7 @@ function describe(n: N, me: string): [string, string] {
   const u = n.actor ? `/u/${n.actor.username}` : '#';
   switch (n.type) {
     case 'friend_request': return ['sent you a friend request', '/friends'];
+    case 'first_friend': return ['is your first friend on SignedOn. Welcome in! 👋', u];
     case 'friend_accepted': return ['accepted your friend request', u];
     case 'comment': return ['commented on your post', `/post/${n.entity_id}`];
     case 'like': return ['liked your post', `/post/${n.entity_id}`];

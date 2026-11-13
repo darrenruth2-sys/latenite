@@ -1,6 +1,7 @@
 // Messenger reliability: chat switching, offline send + retry, background tabs, scroll position.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { launch, close, BASE, newPage, assertClean } from './browser.mjs';
 import { makeUser, befriend, uname } from '../helpers.mjs';
 
@@ -94,4 +95,25 @@ test('reading older messages is not interrupted by new ones', async () => {
   await page.getByText('follow me').waitFor({ timeout: 10000 }); await page.waitForTimeout(900);
   assert.ok(await list.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight < 60), 'should follow when at bottom');
   assertClean(page, 'messenger');
+});
+
+test('long chats: "Load older messages" pages back through history', async () => {
+  const conv = (await A.c.rpc('start_dm', { p_other: C.id })).data;
+  // seed straight into the database (the app itself limits people to 40 messages a minute); messages share timestamps
+  // in threes on purpose, so paging has to handle ties without skipping or repeating anything
+  execFileSync('psql', ['-h', '127.0.0.1', '-p', '54322', '-U', 'postgres', '-qc',
+    `insert into public.messages (conversation_id, sender_id, kind, body, created_at)
+     select '${conv}', '${C.id}', 'text', 'hist ' || lpad(i::text, 3, '0'), now() - interval '1 day' + ((i / 3) * interval '1 minute')
+     from generate_series(0, 259) i`]);
+  const hist = () => page.locator('#chat [aria-live=polite]').evaluate((el) => el.innerText.match(/hist \d{3}/g) || []);
+  await page.goto(`${BASE}/messenger?c=${conv}`); await page.getByText('hist 259').waitFor();
+  const more = page.getByRole('button', { name: 'Load older messages' });
+  assert.ok((await hist()).length < 160, 'only the newest page loads at first');
+  await more.click(); await page.waitForFunction(() => (document.querySelector('#chat [aria-live=polite]').innerText.match(/hist \d{3}/g) || []).length > 200);
+  await more.click(); await page.getByText('hist 000', { exact: true }).waitFor({ timeout: 10000 });
+  await page.waitForTimeout(3000); // polls keep running without dropping the history
+  const all = await hist();
+  assert.equal(all.length, 260, 'every message shown');
+  assert.equal(new Set(all).size, 260, 'nothing repeated or skipped');
+  assert.equal(await more.count(), 0, 'button goes away at the start of the chat');
 });
