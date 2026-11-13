@@ -51,6 +51,10 @@ test('saved layout settings render for visitors', async () => {
   const frame = page.locator('.so-music iframe').first();
   await frame.waitFor({ state: 'attached' });
   assert.match(await frame.getAttribute('src'), /autoplay=1/);
+  assert.equal(await page.locator('iframe[src*="youtube"]').count(), 1, 'exactly one player, so the song never plays twice');
+  await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(300);
+  assert.equal(await page.locator('iframe[src*="youtube"]').count(), 1, 'still one player on phone width');
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole('button', { name: 'Stop autoplay on profiles' }).first().click();
   await page.reload(); await page.locator('.so-name').waitFor(); await page.waitForTimeout(500);
   assert.equal(await page.locator('.so-music iframe').count(), 0, 'stays off after reload');

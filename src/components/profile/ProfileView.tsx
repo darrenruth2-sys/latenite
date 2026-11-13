@@ -46,6 +46,14 @@ export function ProfileView(props: ProfileViewProps) {
     window.addEventListener('beforeunload', h); return () => window.removeEventListener('beforeunload', h);
   }, [dirty]);
 
+  // The song player goes up top on phones and in the sidebar on big screens. Only ONE is ever mounted:
+  // two hidden-by-CSS copies would both autoplay, slightly out of sync.
+  const [wide, setWide] = useState<boolean | null>(null);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const on = () => setWide(mq.matches); on();
+    mq.addEventListener('change', on); return () => mq.removeEventListener('change', on);
+  }, []);
   const t = s.theme;
   const vars = themeVars(t);
   // The person's CSS, cleaned. Saved CSS comes pre-cleaned from the server; while editing we clean it live in the browser.
@@ -120,7 +128,7 @@ export function ProfileView(props: ProfileViewProps) {
             <nav aria-label="Jump to section" className="sticky top-[58px] z-10 -mx-4 flex gap-1.5 overflow-x-auto bg-[var(--pg)]/90 px-4 py-2 backdrop-blur lg:hidden">
               {sections.map((k) => <a key={k} href={`#sec-${k}`} className="shrink-0 border-2 border-[var(--text)] bg-[var(--card)] px-3 py-1.5 text-sm font-bold">{SECTION_LABELS[k] || k}</a>)}
             </nav>
-            {music && <div className="so-music lg:hidden">{music}</div>}
+            {music && wide === false && <div className="so-music">{music}</div>}
             {sections.map((k) => (
               <div key={k} id={`sec-${k}`} className={`so-section so-section-${k} scroll-mt-28`}>
                 {k === 'top'
@@ -134,7 +142,7 @@ export function ProfileView(props: ProfileViewProps) {
             {editing && <Editor cssNotes={liveCss.removed} s={s} setS={setS} setTheme={setTheme} profileId={profile.id} save={save} saving={saving} dirty={dirty} msg={msg}
               reset={() => { setS(initial); setMsg({}); }} slots={Object.keys(props.slots)} themeGalleryEnabled={props.themeGalleryEnabled} />}
             <div className="so-css so-side flex flex-col gap-6">
-              {music && <div className="so-music hidden lg:block">{music}</div>}
+              {music && wide === true && <div className="so-music">{music}</div>}
               {props.side}
             </div>
           </aside>
