@@ -1,4 +1,5 @@
-import * as csstree from 'css-tree';
+// The all-in-one build has its data built in, so nothing is loaded from disk at runtime (the default build crashes on Vercel).
+import * as csstree from 'css-tree/dist/csstree.esm';
 
 /**
  * Custom profile CSS, made safe.
