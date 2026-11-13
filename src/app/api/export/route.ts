@@ -55,15 +55,21 @@ async function build() {
     if (rows) out[key] = rows; else notIncluded.push(key);
   }
 
-  const { data: friends, error: fErr } = await supabase.rpc('friends_of', { p_user: user.id, p_limit: 5000 });
-  if (fErr) throw new Error('export interrupted');
-  out.friends = friends;
-  const { data: visitors, error: vErr } = await supabase.rpc('my_visitors', { p_limit: 1000 });
-  if (vErr) throw new Error('export interrupted');
+  // Full lists, a page at a time (the UI versions are capped at 500 friends / 50 visitors). Any failure stops the export.
+  async function rpcAll(fn: string) {
+    const rows: unknown[] = [];
+    for (let off = 0; ; off += PAGE) {
+      const { data, error } = await supabase.rpc(fn, { p_offset: off, p_limit: PAGE });
+      if (error) throw new Error('export interrupted');
+      rows.push(...((data as unknown[]) || []));
+      if (!data || (data as unknown[]).length < PAGE) return rows;
+    }
+  }
+  out.friends = await rpcAll('export_my_friends');
+  out.visitors_to_my_page = await rpcAll('export_my_visitors');
   const { data: visited, error: hErr } = await supabase.rpc('my_visit_history');
   if (hErr) throw new Error('export interrupted');
   out.pages_i_visited = visited;
-  if (visitors) out.recent_visitors_to_my_page = visitors;
 
   // Your chats: every conversation you're in, with the whole history (your messages and the replies).
   const convIds = ((out.conversation_memberships as { conversation_id: string }[]) || []).map((m) => m.conversation_id);
@@ -71,9 +77,11 @@ async function build() {
   for (let i = 0; i < convIds.length; i += 100) {
     const ids = convIds.slice(i, i + 100);
     const conv = await all((a, b) => supabase.from('conversations').select('*').in('id', ids).range(a, b));
+    if (conv === null) { notIncluded.push('conversations'); break; }
     for (const c of (conv || []) as { id: string }[]) {
       const msgs = await all((a, b) => supabase.from('messages').select('id, sender_id, kind, body, media_path, created_at')
         .eq('conversation_id', c.id).order('created_at').range(a, b));
+      if (msgs === null && !notIncluded.includes('messages')) notIncluded.push('messages');
       conversations.push({ ...c, messages: msgs || [] });
     }
   }

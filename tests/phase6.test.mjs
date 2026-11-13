@@ -59,3 +59,19 @@ test('founder at #1 works even when someone already has a full Top Friends list 
   sql(`delete from app.site_founder`);
 });
 
+
+test('export lists are complete past the UI caps (1,100 friends, paged)', async () => {
+  const me = await makeUser(uname('popular'));
+  // 1,100 friends straight into the database (the app's friend-request limits would make this take hours)
+  const tag = me.id.slice(0, 6);
+  sql(`insert into auth.users (id, email, aud, role, raw_user_meta_data) select gen_random_uuid(), 'bulk' || g || '_${me.id.slice(0, 8)}@x.test', 'authenticated', 'authenticated',
+       jsonb_build_object('username', 'bk${tag}' || g, 'display_name', 'Bulk ' || g, 'birthdate', '1990-01-01') from generate_series(1, 1100) g`);
+  const ids = sql(`select string_agg(p.id::text, ',') from public.profiles p join auth.users u on u.id = p.id where u.email like 'bulk%_${me.id.slice(0, 8)}@x.test'`).split(',');
+  assert.equal(ids.length, 1100, 'bulk profiles created by the signup trigger');
+  sql(`insert into public.friendships (user_a, user_b, requested_by) select least('${me.id}'::uuid, p), greatest('${me.id}'::uuid, p), null from unnest('{${ids.join(',')}}'::uuid[]) p`);
+  const all = []; for (let off = 0; ; off += 1000) { const { data, error } = await me.c.rpc('export_my_friends', { p_offset: off, p_limit: 1000 }); assert.equal(error, null); all.push(...data); if (data.length < 1000) break; }
+  assert.equal(all.length, 1100, 'every friend exported');
+  assert.equal(new Set(all.map((f) => f.id)).size, 1100, 'no repeats across pages');
+  assert.equal((await me.c.rpc('friends_of', { p_user: me.id, p_limit: 5000 })).data.length, 500, 'the UI list is still capped (by design)');
+  assert.ok((await anon().rpc('export_my_friends', { p_offset: 0, p_limit: 10 })).error, 'logged-out callers refused');
+});
