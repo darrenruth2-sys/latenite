@@ -42,6 +42,7 @@ test('download my data gives a complete JSON file', async () => {
   assert.equal(json.account.id, A.id);
   assert.ok(Array.isArray(json.friends) && json.friends.some((f) => f.id === B.id));
   assert.ok('conversations' in json && 'friend_requests_received' in json && 'gifts_received' in json);
+  assert.deepEqual(json._not_included ?? [], [], 'every section is in the export');
 });
 
 test('change password: wrong current password is refused, right one works, new one logs in', async () => {

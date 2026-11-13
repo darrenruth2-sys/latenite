@@ -19,7 +19,7 @@ const QUERIES: [string, string, string][] = [
   ['communities_started', 'communities', 'created_by'], ['community_memberships', 'community_members', 'user_id'],
   ['community_posts', 'community_posts', 'author_id'],
   ['gifts_sent', 'gifts', 'sender_id'], ['gifts_received', 'gifts', 'recipient_id'],
-  ['pages_i_visited', 'profile_visits', 'visitor_id'], ['badges', 'user_badges', 'user_id'],
+['badges', 'user_badges', 'user_id'],
 ];
 
 const PAGE = 1000; // the API returns at most 1000 rows per request, so page through everything
@@ -30,7 +30,8 @@ async function all(build: (from: number, to: number) => PromiseLike<{ data: any[
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await build(from, from + PAGE - 1);
     // First page refused = you have no access to that table (skip it). A later page failing = don't hand over half a list.
-    if (error) { if (from === 0) return null; throw new Error('export interrupted'); }
+    // Only a "you don't have access to this table" refusal is skipped (and listed in the file). Anything else stops the export.
+    if (error) { if (from === 0 && (error as { code?: string }).code === '42501') return null; throw new Error('export interrupted'); }
     rows.push(...(data || []));
     if (!data || data.length < PAGE) return rows;
   }
@@ -47,15 +48,21 @@ async function build() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
   const out: Record<string, unknown> = { exported_at: new Date().toISOString(), account: { id: user.id, email: user.email, created_at: user.created_at } };
+  const notIncluded: string[] = [];
 
   for (const [key, table, col] of QUERIES) {
     const rows = await all((a, b) => supabase.from(table).select('*').eq(col, user.id).range(a, b));
-    if (rows) out[key] = rows;
+    if (rows) out[key] = rows; else notIncluded.push(key);
   }
 
-  const { data: friends } = await supabase.rpc('friends_of', { p_user: user.id, p_limit: 5000 });
+  const { data: friends, error: fErr } = await supabase.rpc('friends_of', { p_user: user.id, p_limit: 5000 });
+  if (fErr) throw new Error('export interrupted');
   out.friends = friends;
-  const { data: visitors } = await supabase.rpc('my_visitors', { p_limit: 1000 });
+  const { data: visitors, error: vErr } = await supabase.rpc('my_visitors', { p_limit: 1000 });
+  if (vErr) throw new Error('export interrupted');
+  const { data: visited, error: hErr } = await supabase.rpc('my_visit_history');
+  if (hErr) throw new Error('export interrupted');
+  out.pages_i_visited = visited;
   if (visitors) out.recent_visitors_to_my_page = visitors;
 
   // Your chats: every conversation you're in, with the whole history (your messages and the replies).
@@ -71,6 +78,8 @@ async function build() {
     }
   }
   out.conversations = conversations;
+  // Sections your account isn't allowed to read directly (normally none). Listed so the file never looks complete when it isn't.
+  if (notIncluded.length) out._not_included = notIncluded;
 
   return new NextResponse(JSON.stringify(out, null, 2), {
     headers: { 'content-type': 'application/json', 'content-disposition': `attachment; filename="signedon-export-${new Date().toISOString().slice(0, 10)}.json"`, 'cache-control': 'no-store' },
