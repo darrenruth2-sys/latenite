@@ -3,14 +3,17 @@ import { useEffect, useRef, useState } from 'react';
 import { parseMusicUrl, PROVIDER_NAME, type Music } from '@/lib/music';
 
 const OPT_OUT = 'so-no-autoplay';
-const canAutoplay = (p: string) => p === 'youtube' || p === 'soundcloud'; // Spotify and Apple Music don't allow it in embeds
+const canAutoplay = (p: string) => p === 'youtube'; // Spotify and Apple Music don't allow it in embeds
+// Clicking a control (Block, Report, a link, a form field…) should never be what starts the music.
+const CONTROL = 'a, button, input, textarea, select, label, summary, [role=button], [role=menuitem], [role=dialog], [contenteditable=true]';
 
 function readOptOut() { try { return localStorage.getItem(OPT_OUT) === '1'; } catch { return false; } }
 
 /**
  * Profile song player.
  * - autoplay (profile pages, when the owner wants it): the player loads and starts right away, old-MySpace style.
- *   Browsers sometimes hold sound until you've clicked something; if so it starts on your first click or key press.
+ *   Browsers sometimes hold sound until you've interacted with the page; if so it starts on your first click on the
+ *   page itself (never a click on a button, link or form) or key press.
  *   Anyone can switch profile autoplay off for themselves.
  * - otherwise: click to play, and nothing from the music service loads until you do.
  */
@@ -33,9 +36,13 @@ export function MusicEmbed({ music, compact = false, accent = '#FF4FA3', label, 
     const kick = () => {
       const w = frame.current?.contentWindow; if (!w) return;
       if (parsed.provider === 'youtube') w.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), 'https://www.youtube-nocookie.com');
-      if (parsed.provider === 'soundcloud') w.postMessage(JSON.stringify({ method: 'play' }), 'https://w.soundcloud.com');
     };
-    const once = () => { kick(); off(); };
+    const once = (e: Event) => {
+      const t = e.target as Element | null;
+      if (e.type === 'keydown' && t && t.closest?.('input, textarea, select, [contenteditable=true]')) return;
+      if (e.type === 'pointerdown' && t && t.closest?.(CONTROL)) return;
+      kick(); off();
+    };
     const off = () => { document.removeEventListener('pointerdown', once, true); document.removeEventListener('keydown', once, true); };
     document.addEventListener('pointerdown', once, true); document.addEventListener('keydown', once, true);
     return off;
@@ -43,9 +50,8 @@ export function MusicEmbed({ music, compact = false, accent = '#FF4FA3', label, 
 
   if (!parsed) return null;
   const name = PROVIDER_NAME[parsed.provider as Music['provider']];
-  const height = parsed.provider === 'spotify' ? 152 : parsed.provider === 'soundcloud' ? 166 : parsed.provider === 'apple' ? 175 : compact ? 200 : 220;
-  const src = parsed.provider === 'youtube' ? parsed.embed + '&autoplay=1&enablejsapi=1&playsinline=1'
-    : parsed.provider === 'soundcloud' ? parsed.embed.replace('auto_play=false', 'auto_play=true') : parsed.embed;
+  const height = parsed.provider === 'spotify' ? 152 : parsed.provider === 'apple' ? 175 : compact ? 200 : 220;
+  const src = parsed.provider === 'youtube' ? parsed.embed + '&autoplay=1&enablejsapi=1&playsinline=1' : parsed.embed;
 
   function setPref(v: boolean) {
     try { if (v) localStorage.setItem(OPT_OUT, '1'); else localStorage.removeItem(OPT_OUT); } catch { /* private mode */ }

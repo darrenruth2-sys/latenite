@@ -6,7 +6,7 @@ import { TopFriendsGrid, type TopFriend } from './TopFriends';
 import { MusicEmbed } from './MusicEmbed';
 import { createClient } from '@/lib/supabase/client';
 import { uploadImage } from '@/lib/upload';
-import { lookupMusic } from '@/app/actions/music';
+import { SongPicker } from './SongPicker';
 import { parseMusicUrl, PROVIDER_NAME } from '@/lib/music';
 import { BG_SIZES, FONTS, PATTERNS, PRESETS, SECTION_LABELS, compactTheme, contrast, resolveTheme, themeVars, type FontKey, type Pattern, type ThemeTokens } from '@/lib/theme';
 import { MOODS, moodColor } from '@/lib/moods';
@@ -21,6 +21,8 @@ export type ProfileViewProps = {
   top: TopFriend[]; pool: TopFriend[];
   slots: Record<string, React.ReactNode>;
   side: React.ReactNode; actions: React.ReactNode; badges?: React.ReactNode;
+  /** Under the profile song: Last.fm "Now listening" and the "Report this song" link. */
+  musicExtra?: React.ReactNode;
   themeGalleryEnabled?: boolean;
   customCss?: { raw: string; safe: string };
 };
@@ -106,8 +108,9 @@ export function ProfileView(props: ProfileViewProps) {
   );
 
   // Autoplay is the owner's call (on unless they turned it off). Never while you're editing your own page.
-  const music = s.music && parseMusicUrl(s.music.url)
+  const player = s.music && parseMusicUrl(s.music.url)
     ? <MusicEmbed key={s.music.url} music={s.music} accent={t.accent} label="PROFILE SONG" autoplay={s.music.autoplay !== false && !editing} /> : null;
+  const music = player || props.musicExtra ? <div className="flex flex-col gap-2">{player}{props.musicExtra}</div> : null;
 
   return (
     <div style={vars} className="so-page min-h-[calc(100dvh-64px)] text-[var(--text)]">
@@ -158,25 +161,13 @@ function Editor({ cssNotes, s, setS, setTheme, profileId, save, saving, dirty, m
   { cssNotes: string[]; s: S; setS: (s: S) => void; setTheme: (p: Partial<S['theme']>) => void; profileId: string; save: () => void; saving: boolean; dirty: boolean;
     msg: { ok?: string; error?: string }; reset: () => void; slots: string[]; themeGalleryEnabled?: boolean }) {
   const t = s.theme;
-  const [musicUrl, setMusicUrl] = useState(s.music?.url || '');
   const [musicErr, setMusicErr] = useState('');
-  const [looking, setLooking] = useState(false);
   const [bgBusy, setBgBusy] = useState(false);
   const [publish, setPublish] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
   const lowContrast = contrast(t.text, t.card) < 4.5 || contrast(t.text, t.page) < 3;
   const allSections = ['top', 'about', 'guestbook', 'posts', 'friends', ...slots.filter((k) => !['about', 'guestbook', 'posts', 'friends'].includes(k))];
   const uniqSections = [...new Set(allSections)];
 
-  async function setSong() {
-    setMusicErr('');
-    if (!musicUrl.trim()) { setS({ ...s, music: null }); return; }
-    const p = parseMusicUrl(musicUrl);
-    if (!p) { setMusicErr('Paste a Spotify, YouTube, Apple Music or SoundCloud link.'); return; }
-    setLooking(true);
-    const info = await lookupMusic(p.url).catch(() => null);
-    setLooking(false);
-    setS({ ...s, music: { provider: p.provider, url: p.url, title: info?.title || s.music?.title || '', artist: info?.artist || s.music?.artist || '', ...(info?.art ? { art: info.art } : {}) } });
-  }
   async function uploadBg(file?: File) {
     if (!file) return; setBgBusy(true);
     try { setTheme({ bg_image: await uploadImage(profileId, file, 'theme', 'media', 2000) }); } catch (e) { setMusicErr(e instanceof Error ? e.message : 'Upload failed'); }
@@ -269,19 +260,17 @@ function Editor({ cssNotes, s, setS, setTheme, profileId, save, saving, dirty, m
         <select className="field min-h-10" value={s.mood} onChange={(e) => setS({ ...s, mood: e.target.value })}><option value="">no mood</option>{MOODS.map((m) => <option key={m.label} style={{ color: moodColor(m.label) }}>{m.label}</option>)}</select></label>
 
       <div className="flex flex-col gap-2"><L>PROFILE SONG</L>
-        <div className="flex gap-1.5"><label htmlFor="ed-song" className="sr-only">Song link</label>
-          <input id="ed-song" className="field min-h-10 flex-1 text-sm" placeholder="Paste a Spotify / YouTube / Apple Music / SoundCloud link" value={musicUrl} onChange={(e) => setMusicUrl(e.target.value)} />
-          <button type="button" className="btn-cyan btn-sm" onClick={setSong} disabled={looking}>{looking ? '…' : 'Set'}</button></div>
+        <SongPicker current={s.music} onPick={(m) => setS({ ...s, music: m })} />
         {s.music && (
           <div className="grid grid-cols-2 gap-1.5">
             <input className="field min-h-9 text-sm" aria-label="Song title" placeholder="Title" maxLength={100} value={s.music.title || ''} onChange={(e) => setS({ ...s, music: { ...s.music!, title: e.target.value } })} />
             <input className="field min-h-9 text-sm" aria-label="Artist" placeholder="Artist" maxLength={100} value={s.music.artist || ''} onChange={(e) => setS({ ...s, music: { ...s.music!, artist: e.target.value } })} />
             <label className="col-span-2 flex min-h-10 items-center gap-2.5 text-sm"><input type="checkbox" className="h-5 w-5 accent-pink" checked={s.music.autoplay !== false}
               onChange={(e) => setS({ ...s, music: { ...s.music!, autoplay: e.target.checked } })} />Play automatically when people visit (old-school style)</label>
-            {s.music.autoplay !== false && (s.music.provider === 'spotify' || s.music.provider === 'apple') && (
-              <p role="note" className="col-span-2 border-2 border-amber px-2 py-1.5 text-xs text-amber">{PROVIDER_NAME[s.music.provider as keyof typeof PROVIDER_NAME]} doesn&apos;t allow autoplay on any website. For autoplay, paste the same song&apos;s YouTube or SoundCloud link instead.</p>
+            {s.music.autoplay !== false && s.music.provider !== 'youtube' && (
+              <p role="note" className="col-span-2 border-2 border-amber px-2 py-1.5 text-xs text-amber">{PROVIDER_NAME[s.music.provider as keyof typeof PROVIDER_NAME]} doesn&apos;t allow autoplay on other websites, so visitors press play. Songs from the search autoplay.</p>
             )}
-            <p className="col-span-2 text-xs text-dim">From {PROVIDER_NAME[s.music.provider as keyof typeof PROVIDER_NAME]}. <button type="button" className="link" onClick={() => { setS({ ...s, music: null }); setMusicUrl(''); }}>Remove song</button></p>
+            <p className="col-span-2 text-xs text-dim">From {PROVIDER_NAME[s.music.provider as keyof typeof PROVIDER_NAME]}.</p>
           </div>
         )}
         {musicErr && <p role="alert" className="text-sm text-[#FF8A8A]">{musicErr}</p>}

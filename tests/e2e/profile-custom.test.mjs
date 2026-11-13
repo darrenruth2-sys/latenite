@@ -2,7 +2,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { launch, close, BASE, newPage } from './browser.mjs';
-import { makeUser, befriend, uname } from '../helpers.mjs';
+import { admin, makeUser, befriend, uname } from '../helpers.mjs';
 
 let A, B, page;
 const picFor = (id) => `http://localhost:54321/storage/v1/object/public/media/${id}/pic.png`;
@@ -19,10 +19,10 @@ before(async () => {
 after(close);
 
 test('saved layout settings render for visitors', async () => {
+  await admin.rpc('set_profile_song', { p_user: A.id, p_music: { provider: 'youtube', url: 'https://www.youtube.com/watch?v=aaaaaaaaaaa', title: 'Song' } });
   const r = await A.c.from('profile_details').update({
     banner_url: picFor(A.id),
     theme: { preset: 'midnight', bg_image: picFor(A.id), bg_size: 'tile', bg_x: 10, bg_y: 90, bg_fixed: false, bg_dim: 40, banner_x: 20, banner_y: 80, banner_zoom: 150 },
-    music: { provider: 'youtube', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title: 'Song' },
     custom_css: `.so-name { color: rgb(0, 255, 0) } body { border-top: 7px solid rgb(255, 0, 0) }
       .so-safe { display: none } .x { position: fixed } div { background-image: url(https://evil.example/t.gif) } @import url(https://evil.example/a.css);`,
   }).eq('id', A.id);

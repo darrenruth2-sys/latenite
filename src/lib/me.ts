@@ -1,4 +1,6 @@
 import { cache } from 'react';
+import { after } from 'next/server';
+import { nudgeSentinel, sentinelConfigured } from '@/lib/sentinel';
 import { createClient } from '@/lib/supabase/server';
 import type { ProfileCard } from '@/lib/types';
 
@@ -16,6 +18,8 @@ export const getMe = cache(async () => {
     supabase.rpc('unread_conversation_count'),
     supabase.from('moderators').select('user_id').eq('user_id', user.id).maybeSingle(),
   ]);
+  // new posts get screened right after pages load (the database scheduler is the backstop)
+  if (sentinelConfigured()) { try { after(nudgeSentinel); } catch { /* not in a request */ } }
   const me = p.data ? ({ ...(p.data as ProfileCard), username: String(p.data.username), isModerator: !!mod.data, suspended: !!p.data.suspended_at } as Me) : null;
   // moderators: legal-deadline items waiting (child safety, intimate images)
   const urgent = me?.isModerator ? ((await supabase.rpc('mod_urgent_count')).data as number) || 0 : 0;

@@ -29,6 +29,9 @@ export function shortTime(iso: string) {
 }
 
 const CODES: Record<string, string> = {
+  AH_SONG_NOT_VERIFIED: 'Pick your profile song again from the song search, then save.',
+  AH_BAD_LASTFM: 'That doesn’t look like a Last.fm username.',
+  AH_USE_PRESERVE: 'Child-safety reports must be preserved (Preserve evidence + suspend), not deleted.',
   AH_UNDERAGE: 'You need to be 18 or older to join SignedOn.',
   AH_INVALID_BIRTHDATE: 'That birthday doesn’t look right.',
   AH_USERNAME_RESERVED: 'That username is reserved. Try another.',

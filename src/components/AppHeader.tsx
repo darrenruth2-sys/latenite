@@ -79,6 +79,7 @@ export function AppHeader({ me, counts }: { me: Me | null; counts: Counts }) {
                     <Link role="menuitem" href="/memories" className="px-4 py-2.5 hover:bg-panel2">Memories</Link>
                     <Link role="menuitem" href="/settings" className="px-4 py-2.5 hover:bg-panel2">Settings &amp; privacy</Link>
                     <Link role="menuitem" href="/rules" className="px-4 py-2.5 hover:bg-panel2">Rules &amp; terms</Link>
+                    <Link role="menuitem" href="/feedback" className="px-4 py-2.5 hover:bg-panel2">Ideas &amp; questions</Link>
                     <Link role="menuitem" href="/report-content" className="px-4 py-2.5 hover:bg-panel2">Report a problem</Link>
                     {me.isModerator && <Link role="menuitem" href="/mod" className="px-4 py-2.5 text-amber hover:bg-panel2">Moderation</Link>}
                     <form action={logOut}><button type="submit" role="menuitem" className="w-full px-4 py-2.5 text-left text-muted hover:bg-panel2">Log out</button></form>

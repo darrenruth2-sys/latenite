@@ -28,6 +28,7 @@ function describe(n: N, me: string): [string, string] {
     case 'badge': return [`You earned the ${n.data.name} badge`, `/u/${me}`];
     case 'mention': return ['mentioned you', `/post/${n.entity_id}`];
     case 'moderation': return [n.data.text || 'A moderator took action on your content', '/settings/account'];
+    case 'system': return [n.data.text || 'News from SignedOn', typeof n.data.href === 'string' && n.data.href.startsWith('/') && !n.data.href.startsWith('//') ? n.data.href : '/feed'];
     default: return ['did something', u];
   }
 }

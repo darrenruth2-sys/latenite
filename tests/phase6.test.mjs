@@ -115,7 +115,7 @@ test('pictures must be SignedOn uploads from your own folder; song art only from
   assert.ok((await u.c.from('profile_details').update({ banner_url: 'https://evil.example/x.jpg' }).eq('id', u.id)).error, 'outside banner refused');
   assert.ok((await u.c.from('profile_details').update({ theme: { preset: 'midnight', bg_image: 'https://evil.example/bg.jpg' } }).eq('id', u.id)).error, 'outside background refused');
   assert.equal((await u.c.from('profile_details').update({ theme: { preset: 'midnight', bg_image: own } }).eq('id', u.id)).error, null);
-  const song = { provider: 'spotify', url: 'https://open.spotify.com/track/abc', title: 'x' };
+  const song = { provider: 'spotify', url: 'https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT', title: 'x' };
   assert.equal((await u.c.from('profile_details').update({ music: { ...song, art: 'https://image-cdn-ak.spotifycdn.com/image/ab67' } }).eq('id', u.id)).error, null);
   assert.ok((await u.c.from('profile_details').update({ music: { ...song, art: 'https://evil.example/art.jpg' } }).eq('id', u.id)).error, 'outside song art refused');
   assert.ok((await u.c.from('posts').insert({ author_id: u.id, kind: 'photo', body: 'x', media: [{ url: 'https://evil.example/p.jpg' }] })).error, 'outside post photo refused');

@@ -12,7 +12,8 @@ test('themes, layout and music are validated', async () => {
   assert.ok((await a.c.from('profile_details').update({ layout: ['top', 'top'] }).eq('id', a.id)).error, 'no duplicate sections');
   assert.ok((await a.c.from('profile_details').update({ layout: ['<script>'] }).eq('id', a.id)).error);
   assert.equal((await a.c.from('profile_details').update({ layout: ['guestbook', 'top', 'about'] }).eq('id', a.id)).error, null);
-  assert.equal((await a.c.from('profile_details').update({ music: { provider: 'youtube', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title: 'Song' } }).eq('id', a.id)).error, null);
+  assert.equal((await a.c.from('profile_details').update({ music: { provider: 'spotify', url: 'https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT', title: 'Song' } }).eq('id', a.id)).error, null);
+  assert.match((await a.c.from('profile_details').update({ music: { provider: 'youtube', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title: 'Song' } }).eq('id', a.id)).error?.message || '', /AH_SONG_NOT_VERIFIED/, 'YouTube songs only through the server check');
   assert.ok((await a.c.from('profile_details').update({ music: { provider: 'youtube', url: 'https://evil.com/x' } }).eq('id', a.id)).error);
   assert.ok((await a.c.from('profile_details').update({ view_count: 999999 }).eq('id', a.id)).error, 'cannot fake view count');
   const hist = await a.c.from('theme_history').select('*');

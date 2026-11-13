@@ -66,10 +66,11 @@ export default function Terms() {
     </> },
     { id: 'moderation', title: 'Moderation and enforcement', body: <>
       <p>Anyone can report content. We review reports and may remove or limit content, or warn, suspend or ban accounts, that we believe break these Terms or the Community Rules, or that put people or the Service at risk. We decide in our reasonable judgment, and we may act without notice when safety requires it.</p>
+      <p>We also use automated tools to screen new content. They may hide content right away until a person reviews it. Automated screening can make mistakes, and it doesn’t mean we review or approve everything that’s posted.</p>
       <p>We don’t review everything before it’s posted and we’re not responsible for what users post. Content on SignedOn comes from its users, not from us. If you think we made a mistake, email {CONTACT_EMAIL} and we’ll take another look.</p>
     </> },
     { id: 'third-party', title: 'Music, embeds and other services', body: <>
-      <p>Profile songs and embeds play from third-party services (Spotify, YouTube, Apple Music, SoundCloud). SignedOn only stores the link you paste. Those services play the content under their own terms and privacy policies, and we’re not responsible for them, their content or their availability. The same goes for links to other websites and for our fundraiser page on GoFundMe.</p>
+      <p>Profile songs play from third-party services (Spotify, YouTube, Apple Music), and “Now listening” comes from Last.fm if you connect it. Profile songs must be music from those services’ catalogs. SignedOn only stores a link to the song. Those services play the content under their own terms and privacy policies, and we’re not responsible for them, their content or their availability. The same goes for links to other websites and for our fundraiser page on GoFundMe.</p>
     </> },
     { id: 'customize', title: 'Themes and custom CSS', body: <>
       <p>You can decorate your page with themes, pictures and custom CSS. Customizations only affect your own page and pass through safety filters. We may remove or change any customization that breaks the Service, hurts readability or accessibility, hides safety tools, or breaks these Terms. Themes you share in the gallery can be used by others under the same license as Your Content.</p>

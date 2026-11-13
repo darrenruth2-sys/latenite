@@ -10,7 +10,7 @@ const csp = [
   `media-src 'self' blob: ${supabase}`,
   "font-src 'self' data:",
   `connect-src 'self' ${supabase} ${ws}`,
-  'frame-src https://challenges.cloudflare.com https://www.gofundme.com https://open.spotify.com https://www.youtube-nocookie.com https://embed.music.apple.com https://w.soundcloud.com',
+  'frame-src https://challenges.cloudflare.com https://www.gofundme.com https://open.spotify.com https://www.youtube-nocookie.com https://embed.music.apple.com',
   "frame-ancestors 'none'", "base-uri 'self'", "form-action 'self'", "object-src 'none'",
 ].join('; ');
 

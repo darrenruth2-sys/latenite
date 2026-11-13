@@ -15,7 +15,7 @@ alter default privileges in schema public grant all on sequences to anon, authen
 delete from auth.users;
 SQL
 for f in $(dirname $0)/../supabase/migrations/*.sql; do
-  case "$f" in *storage*) continue;; esac   # storage policies only exist on hosted Supabase
+  case "$f" in *storage*|*hosted*) continue;; esac   # storage policies only exist on hosted Supabase
   $P -f "$f" >/dev/null && echo "applied $(basename $f)"
 done
 $P -c "notify pgrst, 'reload schema'"

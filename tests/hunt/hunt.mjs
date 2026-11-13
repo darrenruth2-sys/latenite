@@ -35,7 +35,8 @@ async function seed() {
   const pic = `http://localhost:54321/storage/v1/object/public/media/${A.id}/pic.png`;
   await A.c.from('profile_details').update({ headline: 'hello world', bio: 'I build things.', banner_url: pic,
     theme: { preset: 'midnight', bg_image: pic, bg_size: 'cover' },
-    music: { provider: 'youtube', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title: 'Song' }, custom_css: '.so-name{color:#FF4FA3}' }).eq('id', A.id);
+    custom_css: '.so-name{color:#FF4FA3}' }).eq('id', A.id);
+  await admin.rpc('set_profile_song', { p_user: A.id, p_music: { provider: 'youtube', url: 'https://www.youtube.com/watch?v=aaaaaaaaaaa', title: 'Song' } });
   const post = (await A.c.from('posts').insert({ author_id: A.id, body: 'first post #hello', visibility: 'friends' }).select().single()).data;
   await B.c.from('posts').insert({ author_id: B.id, body: 'B says hi', visibility: 'public' });
   await B.c.from('comments').insert({ post_id: post.id, author_id: B.id, body: 'nice' });

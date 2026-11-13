@@ -6,10 +6,12 @@ const REASONS: [string, string][] = [['spam', 'Spam'], ['harassment', 'Harassmen
   ['intimate_image', 'Intimate image shared without consent'], ['child_safety', 'Sexualizes or endangers a child'],
   ['violence', 'Violence or threats'], ['self_harm', 'Self-harm'], ['impersonation', 'Pretending to be someone'], ['copyright', 'Copyright (my work used without permission)'],
   ['underage', 'Might be under 18'], ['other', 'Something else']];
+const SONG: [string, string] = ['music', 'Profile song: not music, offensive or too loud'];
 
-export function ReportButton({ type, id, owner, meId, label = 'Report', className = '' }: { type: string; id: string; owner?: string | null; meId: string | null; label?: string; className?: string }) {
+export function ReportButton({ type, id, owner, meId, label = 'Report', className = '', initialReason = 'spam' }: { type: string; id: string; owner?: string | null; meId: string | null; label?: string; className?: string; initialReason?: string }) {
   const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState('spam');
+  const [reason, setReason] = useState(initialReason);
+  const reasons = type === 'profile' ? [SONG, ...REASONS] : REASONS;
   const [details, setDetails] = useState('');
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   if (!meId) return null;
@@ -31,7 +33,7 @@ export function ReportButton({ type, id, owner, meId, label = 'Report', classNam
             ) : (
               <div className="mt-3 flex flex-col gap-3">
                 <fieldset className="flex flex-col gap-1"><legend className="label mb-2">What&apos;s wrong?</legend>
-                  {REASONS.map(([v, l]) => (
+                  {reasons.map(([v, l]) => (
                     <label key={v} className="flex min-h-9 items-center gap-3"><input type="radio" name="reason" value={v} checked={reason === v} onChange={() => setReason(v)} className="h-4 w-4 accent-pink" />{l}</label>
                   ))}
                 </fieldset>

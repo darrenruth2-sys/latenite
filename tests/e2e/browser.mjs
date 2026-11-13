@@ -18,7 +18,7 @@ export async function newPage(opts = {}) {
   page.on('console', (m) => {
     if (m.type() !== 'error') return;
     const t = m.text();
-    if (/realtime|websocket|WebSocket|Failed to load resource: the server responded with a status of (400|401|403|404|406|409)|favicon|net::ERR_ABORTED|net::ERR_CONNECTION_REFUSED|i\.scdn|ytimg|youtube|spotify/i.test(t)) return;
+    if (/realtime|websocket|WebSocket|Failed to load resource: the server responded with a status of (400|401|403|404|406|409)|favicon|net::ERR_ABORTED|net::ERR_TUNNEL_CONNECTION_FAILED|net::ERR_CONNECTION_REFUSED|i\.scdn|ytimg|youtube|spotify/i.test(t)) return;
     page.problems.push('console: ' + t + ' @ ' + page.url());
   });
   page.on('response', (r) => { if (r.status() >= 500) page.problems.push(`HTTP ${r.status()} ${r.url()}`); });

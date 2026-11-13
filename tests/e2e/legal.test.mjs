@@ -45,7 +45,7 @@ test('moderator sees the urgent badge and the 48h clock, and can resolve it', as
   await p.goto(BASE + '/mod');
   await p.getByText(/h left of the 48h legal deadline/).first().waitFor();
   p.on('dialog', (d) => d.accept('removed the photo'));
-  await p.getByRole('button', { name: 'Content removed' }).first().click();
+  await p.getByRole('button', { name: 'I removed it another way' }).first().click();
   await p.waitForTimeout(1500);
 });
 

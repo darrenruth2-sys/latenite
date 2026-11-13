@@ -31,6 +31,7 @@ export default function Privacy() {
         'To contact you about your account (security, password resets, changes to our terms) and, if you’re on the launch list, to tell you when SignedOn opens.',
         'To meet legal obligations, like answering valid legal requests and reporting child exploitation to NCMEC.',
       ]} />
+      <p><b>Automatic safety screening (“Sentinel”).</b> New public posts, comments, guestbook entries, blogs, bulletins, community posts, profile text and pictures are checked by an automated moderation service (OpenAI’s moderation model) for things like sexual content, threats, hate and harassment. Clearly violating content is hidden right away and a person reviews it; nothing is deleted by the machine alone, and you’ll get a notice if something of yours is hidden. In private chats, only photos are checked, and only for child sexual abuse material. The text of your private messages is never sent for screening. OpenAI processes this content to return the result and doesn’t use it to train its models.</p>
     </> },
     { id: 'dont', title: 'What we don’t do', body: <>
       <UL items={[
@@ -54,8 +55,10 @@ export default function Privacy() {
     { id: 'share', title: 'Who we share it with', body: <>
       <p>We share personal information only:</p>
       <UL items={[
-        <>With service providers who run SignedOn for us, under contracts that limit how they use it: Supabase (database, file storage and login), Vercel (web hosting), Cloudflare (bot protection), our email delivery provider, and GoFundMe (only if you visit our fundraiser).</>,
-        'With third-party music players (Spotify, YouTube, Apple Music, SoundCloud) when a song player loads. Most load only after you press play, but if a page owner turns on autoplay for a YouTube or SoundCloud song, that player loads when you open their page. You can switch profile autoplay off for yourself on any player.',
+        <>With service providers who run SignedOn for us, under contracts that limit how they use it: Supabase (database, file storage and login), Vercel (web hosting), Cloudflare (bot protection), OpenAI (safety screening), our email delivery provider, and GoFundMe (only if you visit our fundraiser).</>,
+        'With third-party music players (Spotify, YouTube, Apple Music) when a song player loads. Most load only after you press play, but if a page owner turns on autoplay for a YouTube song, that player loads when you open their page. You can switch profile autoplay off for yourself on any player. Song search sends what you type to YouTube or Apple’s music search.',
+        'With Last.fm, only if you connect it for “Now listening”: we look up your recent tracks with the Last.fm username you give us. You can listen invisibly or disconnect any time.',
+        'With OpenAI, for the automatic safety screening described above.',
         'When the law requires it, like a valid subpoena or court order, or to report child exploitation to NCMEC.',
         'To protect people: when we believe in good faith that someone’s life or safety is at risk.',
         'If SignedOn is ever sold or merged. We’d tell you first, and this policy would keep applying to your information.',

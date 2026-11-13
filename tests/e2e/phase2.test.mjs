@@ -34,9 +34,10 @@ test('phase 2: live editor, themes, top friends drag, music, guestbook, visitors
   await pg.locator('button[aria-label^="DJ Static, rank 1"]').waitFor();
   // section order: move guestbook to top
   while (await pg.locator('button[aria-label="Move Guestbook up"]').isEnabled()) await pg.click('button[aria-label="Move Guestbook up"]');
-  // song (lookup can't reach the internet here, so title is typed)
-  await pg.fill('#ed-song', 'https://youtu.be/dQw4w9WgXcQ');
-  await pg.click('#ed-song ~ button');
+  // song: music-only search (stand-in YouTube results); picking one saves it right away
+  await pg.fill('#ed-song', 'neon'); await pg.click('button:has-text("Search")');
+  await pg.getByRole('list', { name: 'Songs' }).getByRole('button').first().click();
+  await pg.getByText('is your profile song now').waitFor();
   await pg.fill('input[aria-label="Song title"]', 'Neon Parking Lot');
   await pg.fill('input[aria-label="Artist"]', 'The Late Arrivals');
   await pg.selectOption('label:has-text("WHO CAN SIGN") select', 'everyone');

@@ -8,6 +8,8 @@ import { Avatar } from '@/components/Avatar';
 import { FriendButton } from '@/components/profile/FriendButton';
 import { BlockButton } from '@/components/profile/BlockButton';
 import { ReportButton } from '@/components/ReportButton';
+import { NowListening } from '@/components/profile/NowListening';
+import { lastfmConfigured } from '@/lib/lastfm';
 import { FeedList } from '@/components/feed/FeedList';
 import { ProfileView } from '@/components/profile/ProfileView';
 import { Guestbook, type GbEntry } from '@/components/profile/Guestbook';
@@ -165,6 +167,10 @@ export default async function ProfilePage({ params, searchParams }: Params) {
         customCss={{ raw: isMe ? details.custom_css || '' : '', safe: sanitizeCss(details.custom_css).css }}
         top={(topRes.data || []) as TopFriend[]} pool={(pool.data || []) as TopFriend[]}
         slots={slots} side={side} actions={actions} badges={extras.badges} themeGalleryEnabled={extras.themeGallery}
+        musicExtra={lastfmConfigured() || (details.music && meId && !isMe) ? <>
+          {lastfmConfigured() && <NowListening profileId={p.id} />}
+          {details.music && meId && !isMe && <ReportButton type="profile" id={p.id} owner={p.id} meId={meId} initialReason="music" label="Report this song" className="min-h-9 self-start px-1 text-xs text-dim hover:text-fg" />}
+        </> : null}
       />
     </>
   );
