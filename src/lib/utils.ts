@@ -29,6 +29,7 @@ export function shortTime(iso: string) {
 }
 
 const CODES: Record<string, string> = {
+  AH_INVITE_REQUIRED: 'SignedOn is invite-only during the beta. You need a valid invite code.',
   AH_SONG_NOT_VERIFIED: 'Pick your profile song again from the song search, then save.',
   AH_BAD_LASTFM: 'That doesn’t look like a Last.fm username.',
   AH_USE_PRESERVE: 'Child-safety reports must be preserved (Preserve evidence + suspend), not deleted.',

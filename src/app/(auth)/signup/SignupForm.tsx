@@ -25,7 +25,7 @@ export function useUsernameCheck(value: string) {
   return status;
 }
 
-export function SignupForm({ initialUsername = '' }: { initialUsername?: string }) {
+export function SignupForm({ initialUsername = '', invite = null }: { initialUsername?: string; invite?: { required: boolean; code: string } | null }) {
   const [state, action] = useActionState(signUp, undefined);
   const [username, setUsername] = useState(state?.fields?.username ?? initialUsername);
   const status = useUsernameCheck(username);
@@ -48,6 +48,11 @@ export function SignupForm({ initialUsername = '' }: { initialUsername?: string 
         </div>
         <p id="su-u-help" role="status" className={`text-sm ${msg[1]}`}>{msg[0]}</p>
       </div>
+      {invite?.required && (
+        <label className="flex flex-col gap-2"><span className="label">Invite code</span>
+          <input className="field font-mono uppercase" name="invite_code" required defaultValue={state?.fields?.invite_code ?? invite.code} placeholder="SO-XXXX-XXXX" autoComplete="off" maxLength={20} />
+          <span className="text-xs text-dim">SignedOn is invite-only during the beta.</span></label>
+      )}
       <label className="flex flex-col gap-2"><span className="label">Display name</span>
         <input className="field" name="display_name" maxLength={40} defaultValue={state?.fields?.display_name} placeholder="what friends call you" /></label>
       <label className="flex flex-col gap-2"><span className="label">Email</span>

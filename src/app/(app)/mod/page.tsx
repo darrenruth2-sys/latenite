@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getMe } from '@/lib/me';
 import { ModActions, FeatureButton, TakedownActions, FeedbackDone } from './ModActions';
+import { InvitePanel } from './InvitePanel';
 import { timeAgo } from '@/lib/utils';
 import { Avatar } from '@/components/Avatar';
 
@@ -28,6 +29,7 @@ export default async function Mod({ searchParams }: { searchParams: Promise<{ st
   const feedback = (fb || []) as { id: string; created_at: string; kind: string; message: string; reply_email: string | null; page: string | null; status: string; username: string | null }[];
   const sentinel = sstats as { pending: number; checked_today: number; hidden_today: number } | null;
   const sentinelOn = !!process.env.OPENAI_API_KEY;
+  const { data: inviteOnly } = await supabase.rpc('invite_only');
   const list = (data || []) as R[];
   const takedowns = (tds || []) as T[];
   return (
@@ -89,6 +91,7 @@ export default async function Mod({ searchParams }: { searchParams: Promise<{ st
             <li key={c.id} className="panel flex items-center gap-3 p-3"><Avatar user={c} size={44} /><Link href={`/u/${c.username}`} className="min-w-0 flex-1 truncate font-semibold">{c.display_name}</Link><FeatureButton id={c.id} /></li>))}</ul>
         )}
       </section>
+      <InvitePanel inviteOnly={!!inviteOnly} />
       <section aria-labelledby="fb-h" className="flex flex-col gap-3">
         <h2 id="fb-h" className="label text-cyan">Ideas &amp; questions ({feedback.length}{status === 'open' ? ' new' : ''})</h2>
         {feedback.length === 0 ? <p className="text-sm text-dim">Nothing new.</p> : (

@@ -41,7 +41,8 @@ export async function signUp(_: FormState, form: FormData): Promise<FormState> {
   const username = String(form.get('username') || '').trim().toLowerCase();
   const display_name = String(form.get('display_name') || '').trim().slice(0, 40);
   const birthdate = String(form.get('birthdate') || '');
-  const fields = { email, username, display_name, birthdate };
+  const invite_code = String(form.get('invite_code') || '').trim().toUpperCase().replace(/\s/g, '').slice(0, 20);
+  const fields = { email, username, display_name, birthdate, invite_code };
   if (!/^[a-z0-9._]{3,20}$/.test(username) || /^[._]|[._]$|\.\./.test(username))
     return { error: 'Usernames are 3–20 letters, numbers, dots or underscores (not at the start or end).', fields };
   if (!/^\S+@\S+\.\S+$/.test(email)) return { error: 'Enter a real email address.', fields };
@@ -57,12 +58,16 @@ export async function signUp(_: FormState, form: FormData): Promise<FormState> {
   const supabase = await createClient();
   const { data: available } = await supabase.rpc('username_available', { p_username: username });
   if (!available) return { error: `@${username} is taken. Try another.`, fields };
+  // beta: the database checks the code for real when the account is made; this just gives a friendlier message first
+  if ((await supabase.rpc('invite_only')).data && !(await supabase.rpc('invite_check', { p_code: invite_code })).data)
+    return { error: 'That invite code isn’t valid or has already been used.', fields };
 
   const { data, error } = await supabase.auth.signUp({
     email, password,
-    options: { captchaToken: captchaFrom(form), data: { username, display_name: display_name || username, birthdate }, emailRedirectTo: `${await siteUrl()}/auth/callback?next=/feed` },
+    options: { captchaToken: captchaFrom(form), data: { username, display_name: display_name || username, birthdate, ...(invite_code ? { invite_code } : {}) }, emailRedirectTo: `${await siteUrl()}/auth/callback?next=/feed` },
   });
   if (error) return { error: friendlyError(error), fields };
+  if (data.user && (data.user.identities?.length ?? 1) > 0) (await cookies()).delete('so_invite');
   if (data.session) redirect('/feed');
   // GoTrue hides "already registered" behind a fake success: identities is empty in that case.
   if (data.user && data.user.identities && data.user.identities.length === 0)

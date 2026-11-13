@@ -20,7 +20,8 @@ const FEATURES = [
   ['AWAY MESSAGES', '#FFC23D'], ['NUDGES', '#FF8A5C'], ['BLOGS', '#38E1FF'], ['BULLETINS', '#FF4FA3'],
 ] as const;
 
-export default async function ComingSoon() {
+export default async function ComingSoon({ searchParams }: { searchParams?: Promise<{ invite?: string }> }) {
+  const badInvite = (await searchParams)?.invite === 'bad';
   const supabase = await createClient();
   const { data } = await supabase.rpc('waitlist_count');
   const count = Number(data ?? 0);
@@ -66,6 +67,16 @@ export default async function ComingSoon() {
               </div>
             </div>
             <Countdown target={launchAt} label="MON · JAN 4 · 2027" />
+            <form action="/join" method="get" className="flex max-w-[440px] flex-col gap-2 border-2 border-lime p-3" aria-labelledby="inv-h">
+              <span id="inv-h" className="pixel text-xl text-lime">&gt; GOT A BETA INVITE CODE?</span>
+              <div className="flex gap-2">
+                <label htmlFor="inv" className="sr-only">Invite code</label>
+                <input id="inv" name="code" className="field min-h-11 flex-1 font-mono uppercase" placeholder="SO-XXXX-XXXX" maxLength={20} autoComplete="off" required />
+                <button type="submit" className="btn-cyan">Get in</button>
+              </div>
+              {badInvite && <p role="alert" className="text-sm text-[#FF8A8A]">That code isn&apos;t valid or has already been used.</p>}
+              <p className="text-xs text-dim">Already a tester? <a href="/login" className="link">Log in</a></p>
+            </form>
           </div>
 
           {/* away message window */}
