@@ -7,7 +7,7 @@ const PROTECTED = ['/feed', '/friends', '/settings', '/notifications', '/messeng
 //  - people holding the preview key (the founder),
 //  - beta testers who are signed in (accounts can only be made with an invite code while invite-only is on),
 //  - someone holding a checked invite code, who may reach the signup page.
-const SOON_OPEN = ['/soon', '/privacy', '/rules', '/terms', '/preview', '/copyright', '/report-content', '/api/sentinel', '/join'];
+const SOON_OPEN = ['/soon', '/privacy', '/rules', '/terms', '/preview', '/copyright', '/report-content', '/api/sentinel', '/join', '/unsubscribe'];
 // Pages beta testers need before they're signed in.
 const SOON_AUTH = ['/login', '/forgot', '/reset-password', '/check-email', '/auth'];
 const INVITE_COOKIE = 'so_invite';

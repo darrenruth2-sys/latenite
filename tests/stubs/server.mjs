@@ -8,6 +8,7 @@ const VIDEOS = {
   bbbbbbbbbbb: vid('bbbbbbbbbbb', 'Prank Guy', '24', 'PT2M'),                // not music
   ccccccccccc: vid('ccccccccccc', 'Loud Noises - Topic', '10', 'PT24H'),     // way too long
 };
+const SENT = [];
 const json = (res, o, code = 200) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(o)); };
 http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x');
@@ -20,6 +21,13 @@ http.createServer(async (req, res) => {
     if (s.includes('SENTINEL_SELFHARM')) cats['self-harm'] = true;
     return json(res, { results: [{ flagged: Object.keys(cats).length > 0, categories: cats }] });
   }
+  if (req.method === 'POST' && u.pathname === '/resend/emails') {
+    let body = ''; for await (const c of req) body += c;
+    const m = JSON.parse(body); SENT.push({ ...m, at: Date.now() });
+    if (String(m.to?.[0] || '').includes('bounce')) return json(res, { message: 'invalid' }, 422);
+    return json(res, { id: 'em_' + SENT.length });
+  }
+  if (u.pathname === '/resend/sent') { const to = u.searchParams.get('to'); return json(res, SENT.filter((m) => !to || m.to.includes(to))); }
   if (u.pathname === '/youtube/search') return json(res, { items: Object.keys(VIDEOS).map((videoId) => ({ id: { videoId } })) });
   if (u.pathname === '/youtube/videos') return json(res, { items: (u.searchParams.get('id') || '').split(',').map((i) => VIDEOS[i]).filter(Boolean) });
   if (u.pathname === '/lastfm/2.0/') {

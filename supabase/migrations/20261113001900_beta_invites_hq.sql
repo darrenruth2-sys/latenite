@@ -107,7 +107,7 @@ end; $$;
 create or replace function public.mod_set_invite_only(p_on boolean) returns void language plpgsql security definer set search_path = '' as $$
 begin
   if not app.is_moderator(auth.uid()) then raise exception 'AH_NOT_ALLOWED' using errcode = '42501'; end if;
-  update app.settings set invite_only = coalesce(p_on, false);
+  update app.settings set invite_only = coalesce(p_on, false) where singleton;
   insert into public.moderation_log (moderator_id, action, target_type, target_id, note)
   values (auth.uid(), case when p_on then 'invite_only_on' else 'invite_only_off' end, 'site', auth.uid(), null);
 end; $$;

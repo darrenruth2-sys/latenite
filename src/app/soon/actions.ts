@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import { headers } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { emailConfigured, sendWaitlistKey } from '@/lib/email';
 
 export type WaitlistState = { ok: boolean; message: string; count?: number } | undefined;
 
@@ -27,6 +28,10 @@ export async function joinWaitlist(_prev: WaitlistState, form: FormData): Promis
   }
   const res = data as { new: boolean; count: number };
   const hi = name ? `Thanks, ${name}! ` : 'Thanks! ';
-  // Same answer whether the email was new or already listed, so the form can't be used to check who signed up.
-  return { ok: true, count: res.count, message: `${hi}You’re on the list. We’ll email you the second the doors open.` };
+  // Early birds get a personal beta key by email (while auto-keys are on and there are keys left).
+  if (emailConfigured()) await sendWaitlistKey(supabase, email).catch(() => false);
+  // Same answer whether the email was new, already listed, or got a key, so the form can't be used to check who signed up.
+  return { ok: true, count: res.count, message: emailConfigured()
+    ? `${hi}You’re on the list. Check your inbox: if you’re one of the early birds, your beta key is on its way.`
+    : `${hi}You’re on the list. We’ll email you the second the doors open.` };
 }

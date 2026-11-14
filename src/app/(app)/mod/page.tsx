@@ -91,7 +91,7 @@ export default async function Mod({ searchParams }: { searchParams: Promise<{ st
             <li key={c.id} className="panel flex items-center gap-3 p-3"><Avatar user={c} size={44} /><Link href={`/u/${c.username}`} className="min-w-0 flex-1 truncate font-semibold">{c.display_name}</Link><FeatureButton id={c.id} /></li>))}</ul>
         )}
       </section>
-      <InvitePanel inviteOnly={!!inviteOnly} />
+      <InvitePanel inviteOnly={!!inviteOnly} emailReady={!!process.env.RESEND_API_KEY} />
       <section aria-labelledby="fb-h" className="flex flex-col gap-3">
         <h2 id="fb-h" className="label text-cyan">Ideas &amp; questions ({feedback.length}{status === 'open' ? ' new' : ''})</h2>
         {feedback.length === 0 ? <p className="text-sm text-dim">Nothing new.</p> : (

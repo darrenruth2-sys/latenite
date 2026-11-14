@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendEmail } from '@/lib/email';
 
 export type FeedbackState = { ok?: boolean; error?: string };
 const KINDS = ['idea', 'question', 'bug', 'other'] as const;
@@ -9,15 +10,10 @@ const LABEL: Record<string, string> = { idea: 'Idea', question: 'Question', bug:
 
 /** Emails the founder when email sending is set up (Resend). The message is saved either way. */
 async function emailFounder(subject: string, text: string, replyTo: string | null) {
-  const key = process.env.RESEND_API_KEY, to = process.env.FEEDBACK_EMAIL_TO;
-  if (!key || !to) return;
-  try {
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST', signal: AbortSignal.timeout(8000),
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: process.env.FEEDBACK_EMAIL_FROM || 'SignedOn <feedback@signedon.social>', to: [to], subject, text, ...(replyTo ? { reply_to: replyTo } : {}) }),
-    });
-  } catch { /* saved in the inbox anyway */ }
+  const to = process.env.FEEDBACK_EMAIL_TO;
+  if (!to) return;
+  const html = `<pre style="font-family:Arial,sans-serif;white-space:pre-wrap;font-size:15px">${text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!))}</pre>`;
+  await sendEmail(to, subject, html, text, replyTo ? { replyTo } : {});
 }
 
 export async function sendFeedback(_: FeedbackState, form: FormData): Promise<FeedbackState> {

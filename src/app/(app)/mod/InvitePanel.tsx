@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { friendlyError } from '@/lib/utils';
+import { AutoInvites } from './AutoInvites';
 
 type Invite = { code: string; batch: string; note: string | null; created_at: string; max_uses: number; uses: number; expires_at: string | null; revoked: boolean; used_by: string[] };
 
 /** Beta keys: turn invite-only on/off, make batches of codes, copy their links, see who used them. */
-export function InvitePanel({ inviteOnly: initialOnly }: { inviteOnly: boolean }) {
+export function InvitePanel({ inviteOnly: initialOnly, emailReady = false }: { inviteOnly: boolean; emailReady?: boolean }) {
   const sb = createClient();
   const [only, setOnly] = useState(initialOnly);
   const [list, setList] = useState<Invite[]>([]);
@@ -57,6 +58,8 @@ export function InvitePanel({ inviteOnly: initialOnly }: { inviteOnly: boolean }
           <b className={only ? 'text-lime' : 'text-amber'}>{only ? '🔒 Invite-only is ON' : '🔓 Invite-only is OFF'}</b>
           <button type="button" className="btn-ghost btn-sm" disabled={busy} onClick={toggle}>{only ? 'Let anyone sign up' : 'Require invite codes'}</button>
         </div>
+        <AutoInvites emailReady={emailReady} />
+        <span className="label text-dim">Make codes by hand (for people who reach out)</span>
         <form onSubmit={make} className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-sm">How many<input type="number" className="field min-h-10 w-24" min={1} max={500} value={count} onChange={(e) => setCount(+e.target.value)} /></label>
           <label className="flex flex-col gap-1 text-sm">Batch name<input className="field min-h-10 w-40" maxLength={40} value={batch} onChange={(e) => setBatch(e.target.value)} /></label>

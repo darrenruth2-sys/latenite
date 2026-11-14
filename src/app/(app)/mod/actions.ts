@@ -50,3 +50,17 @@ export async function takedownRemove(id: string, link: string, pick?: { type: st
   if (stillPublic) return { error: `Hidden from the site, but ${stillPublic} picture file(s) couldn’t be moved off public storage. Try again.` };
   return { ok: `Removed (${target.type}). ${moved ? `${moved} picture file(s) moved to private evidence storage. ` : ''}Request closed.` };
 }
+
+/** Emails beta keys to people already on the waitlist (oldest first, up to the auto-key limit). */
+export async function sendKeysToWaiting(): Promise<{ ok?: string; error?: string }> {
+  const { emailConfigured, sendWaitlistKey } = await import('@/lib/email');
+  if (!emailConfigured()) return { error: 'Email isn’t set up yet (RESEND_API_KEY in Vercel).' };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('mod_waiting_for_keys', { p_limit: 100 });
+  if (error) return { error: error.message.includes('NOT_ALLOWED') ? 'Moderators only.' : 'Couldn’t load the waitlist.' };
+  const admin = createAdminClient();
+  let sent = 0, failed = 0;
+  for (const email of (data || []) as string[]) { if (await sendWaitlistKey(admin, email)) sent++; else failed++; }
+  if (!sent && !failed) return { ok: 'Nobody’s waiting (or the key limit is reached).' };
+  return { ok: `Sent ${sent} key${sent === 1 ? '' : 's'}${failed ? `, ${failed} didn’t go through (try again later)` : ''}.` };
+}
