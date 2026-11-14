@@ -112,3 +112,9 @@ body {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* "Signing on…" splash: hidden before paint when it shouldn't show (see SPLASH_SCRIPT) */
+.so-nosplash #so-splash { display: none; }
+@keyframes so-run { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-4px) } }
+.so-run { animation: so-run 0.35s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .so-run { animation: none; } }

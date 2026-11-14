@@ -110,16 +110,23 @@ export default async function ProfilePage({ params, searchParams }: Params) {
           <p className="whitespace-pre-wrap break-words leading-relaxed">{details.meet || <span className="text-[var(--muted)]">—</span>}</p></div>
       </section>
     ),
-    guestbook: <Guestbook initial={gb} profileId={p.id} ownerName={first} meId={meId} isOwner={isMe} canSign={canSign} policy={policy} />,
+    guestbook: (
+      <div className="flex flex-col gap-2">
+        <Guestbook initial={gb} profileId={p.id} ownerName={first} meId={meId} isOwner={isMe} canSign={canSign} policy={policy} />
+        <Link href={`/u/${p.username}/guestbook`} className="inline-flex min-h-10 items-center self-end px-1 text-sm font-bold underline">Open the full guestbook</Link>
+      </div>
+    ),
     posts: (
       <section aria-labelledby="posts-h" className="flex flex-col gap-4">
-        <h2 id="posts-h" className="text-[26px] font-extrabold" style={head}>Posts</h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 id="posts-h" className="text-[26px] font-extrabold" style={head}>Posts</h2>
+          <Link href={`/u/${p.username}/photos`} className="inline-flex min-h-10 items-center px-1 text-sm font-bold underline">Photos</Link></div>
         <div className="themed-feed text-fg"><FeedList initial={posts} meId={meId} source={{ kind: 'user', userId: p.id }} showFilters={false} emptyText={isMe ? 'You haven’t posted yet.' : 'Nothing posted yet.'} /></div>
       </section>
     ),
     friends: (
       <section aria-labelledby="allf-h" className={box}>
-        <h2 id="allf-h" className="text-[26px] font-extrabold" style={head}>{first}&apos;s friends · {friendCountRes.count ?? friends.length}</h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 id="allf-h" className="text-[26px] font-extrabold" style={head}>{first}&apos;s friends · {friendCountRes.count ?? friends.length}</h2>
+          <Link href={`/u/${p.username}/friends`} className="inline-flex min-h-10 items-center px-1 text-sm font-bold underline">See all</Link></div>
         {friends.length === 0 ? <p className="text-[var(--muted)]">No friends yet.</p> : (
           <ul className="grid grid-cols-4 gap-3 sm:grid-cols-6">{friends.map((f) => (
             <li key={f.id}><Link href={`/u/${f.username}`} className="flex flex-col gap-1 text-xs font-semibold"><Avatar user={f} size={80} border="var(--text)" className="!h-auto !w-full aspect-square" /><span className="truncate">{f.display_name}</span></Link></li>))}</ul>
@@ -131,6 +138,14 @@ export default async function ProfilePage({ params, searchParams }: Params) {
 
   const side = (
     <>
+      <nav aria-label="Profile sections" className={box + ' !gap-2 !p-4'}>
+        <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">{first}&apos;s stuff</span>
+        <div className="grid grid-cols-2 gap-1.5">
+          {[['friends', 'Friends'], ['photos', 'Photos'], ['guestbook', 'Guestbook'], ['blog', 'Blog']].map(([slug, label]) => (
+            <Link key={slug} href={`/u/${p.username}/${slug}`} className="inline-flex min-h-10 items-center justify-center border-2 border-[var(--text)] px-2 text-sm font-bold hover:bg-[var(--accent)] hover:text-[var(--on-accent)]">{label}</Link>
+          ))}
+        </div>
+      </nav>
       <VisitorsBox isOwner={isMe} total={stats.total || 0} week={stats.week} visitors={(myVisitors.data || []) as never} privateBrowsing={!!mySettings.data?.private_browsing} meId={meId} />
       {extras.side}
       <section aria-labelledby="det-h" className={box}>

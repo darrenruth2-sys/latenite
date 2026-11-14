@@ -39,7 +39,7 @@ export function HelpBot({ me }: { me: string }) {
   return (
     <>
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="helpbot"
-        className="fixed bottom-24 right-4 z-40 flex h-14 min-w-14 items-center justify-center gap-2 border-2 border-fg bg-cyan px-4 font-bold text-ink shadow-[4px_4px_0_var(--color-pink)] md:bottom-6">
+        className="fixed bottom-[88px] right-3 z-40 flex h-12 min-w-12 items-center justify-center gap-2 border-2 border-fg bg-cyan px-3 font-bold text-ink shadow-[3px_3px_0_var(--color-pink)] md:bottom-6 md:right-4 md:h-14 md:min-w-14 md:px-4">
         <span aria-hidden="true" className="text-xl leading-none">?</span><span className="hidden sm:inline">Help</span><span className="sr-only sm:hidden">Help</span>
       </button>
       {open && (

@@ -5,6 +5,8 @@ import '@fontsource/vt323';
 import '@fontsource-variable/fraunces';
 import '@fontsource/space-mono';
 import './globals.css';
+import { SignOnSplash, SPLASH_SCRIPT } from '@/components/SignOnSplash';
+import { NavProgress } from '@/components/NavProgress';
 
 export const metadata: Metadata = {
   title: { default: 'SignedOn — your profile, your music, your friends', template: '%s · SignedOn' },
@@ -16,8 +18,11 @@ export const viewport: Viewport = { themeColor: '#0a0a18', width: 'device-width'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="min-h-dvh">
+        <script dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
+        <SignOnSplash />
+        <NavProgress />
         <a href="#main" className="sr-only-focusable fixed left-2 top-2 z-50 bg-cyan px-3 py-2 font-semibold text-ink">Skip to content</a>
         {children}
       </body>
