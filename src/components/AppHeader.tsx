@@ -69,7 +69,7 @@ export function AppHeader({ me, counts }: { me: Me | null; counts: Counts }) {
                   <Avatar user={me} size={34} />
                 </button>
                 {menu && (
-                  <div role="menu" className="absolute right-0 top-12 z-40 flex w-56 flex-col border-2 border-fg bg-panel py-1 shadow-[6px_6px_0_var(--color-cyan)]"
+                  <div role="menu" className="absolute right-0 top-12 z-50 flex max-h-[calc(100dvh-150px)] w-56 flex-col overflow-y-auto overscroll-contain border-2 border-fg bg-panel py-1 shadow-[6px_6px_0_var(--color-cyan)] md:max-h-[calc(100dvh-80px)]"
                     // Close after following a link. Not for Log out: closing removes its form before it can send.
                     onClick={(e) => { if ((e.target as HTMLElement).closest('a')) setMenu(false); }}>
                     <Link role="menuitem" href={myPage} className="px-4 py-2.5 hover:bg-panel2">My page</Link>
